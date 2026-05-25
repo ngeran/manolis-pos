@@ -1,36 +1,240 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Manolis Orders
 
-## Getting Started
+Restaurant order management / POS web application. Touch-optimized, responsive, built for staff to take, modify, and manage customer orders with a CMS for the menu.
 
-First, run the development server:
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router, React 19), TypeScript |
+| Database | Neon Postgres |
+| ORM | Drizzle ORM with `postgres.js` driver |
+| Auth | NextAuth.js v5 — Credentials provider, bcryptjs, JWT sessions |
+| State | Zustand (client-side cart before DB insertion) |
+| Styling | Tailwind CSS v4 with custom design tokens |
+| Font | Outfit (via `next/font/google`) |
+| Deployment | Vercel |
+
+## Prerequisites
+
+- Node.js 24+
+- Docker & Docker Compose (for local Postgres)
+- npm
+
+## Local Development
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd manolis-pos
+npm install
+```
+
+### 2. Start Postgres
+
+```bash
+docker compose up -d db
+```
+
+This starts a Postgres 16 container on `localhost:5432` with:
+- User: `manolis`
+- Password: `manolis123`
+- Database: `manolis_pos`
+
+### 3. Configure environment
+
+A `.env.local` file is included for local development:
+
+```
+DATABASE_URL=postgres://manolis:manolis123@localhost:5432/manolis_pos
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=dev-secret-change-in-production
+```
+
+> **Important:** Generate a new `NEXTAUTH_SECRET` for production with `npx auth secret`.
+
+### 4. Push schema and seed
+
+```bash
+npm run db:push    # Create tables from Drizzle schema
+npm run db:seed    # Populate with categories, menu items, and admin user
+```
+
+### 5. Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). You'll be redirected to the login page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Default login credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@manolis.local` | `admin123` |
+| Staff | `staff@manolis.local` | `staff123` |
 
-## Learn More
+## Seeded Menu
 
-To learn more about Next.js, take a look at the following resources:
+The seed script populates **46 menu items** across **5 categories**:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Category | Items |
+|---|---|
+| Ορεκτικά | 15 items (Ψωμί, Πατάτες Τηγανιτές, Φέτα, Κεφτέδες, ...) |
+| Σαλάτες | 8 items (Χωριάτικη, Ρόκα, Ντοματοσαλάτα, ...) |
+| Κρεατικά | 9 items (Χοιρινή Μπριζόλα, Μπιφτέκια, Παϊδάκια, ...) |
+| Ψάρια | 6 items (Σαρδέλα, Καλαμαράκια, Τσιπούρα, ...) |
+| Ποτά | 8 items (Κρασί Χύμα, Μπύρες, Αναψυκτικά, Ούζο, ...) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To re-seed from scratch:
 
-## Deploy on Vercel
+```bash
+docker compose down -v    # Remove DB volume
+docker compose up -d db   # Start fresh
+npm run db:push
+npm run db:seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Available Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev          # Start dev server with Turbopack
+npm run build        # Production build
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run db:generate  # Generate Drizzle migration files
+npm run db:migrate   # Run pending migrations
+npm run db:push      # Push schema directly to DB (dev)
+npm run db:seed      # Seed categories, menu items, and users
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── layout.tsx                          # Root layout (Outfit font, Material Symbols)
+│   ├── globals.css                         # Tailwind v4 + design tokens
+│   ├── page.tsx                            # Redirects to /pos
+│   ├── login/page.tsx                      # Login form
+│   ├── (app)/
+│   │   ├── layout.tsx                      # App shell (sidebar, top bar, auth guard)
+│   │   ├── pos/page.tsx                    # POS screen (menu grid + order ticket)
+│   │   ├── orders/page.tsx                 # Order history
+│   │   └── admin/
+│   │       ├── menu/page.tsx               # Menu CRUD
+│   │       └── categories/page.tsx         # Category management
+│   └── api/
+│       ├── auth/[...nextauth]/route.ts     # NextAuth handler
+│       ├── orders/route.ts                 # Orders CRUD
+│       ├── menu/route.ts                   # Menu items CRUD
+│       └── categories/route.ts             # Categories CRUD
+├── components/
+│   ├── pos/
+│   │   ├── MenuGrid.tsx                    # Category filter + item cards
+│   │   ├── OrderTicket.tsx                 # Cart sidebar with totals
+│   │   └── QuantityStepper.tsx             # +/- quantity control
+│   └── ui/
+│       ├── Button.tsx                      # Reusable button component
+│       └── Badge.tsx                       # Status badge
+├── lib/
+│   ├── auth.ts                             # NextAuth config
+│   ├── db/
+│   │   ├── schema.ts                       # Drizzle table definitions
+│   │   ├── index.ts                        # DB connection (postgres.js)
+│   │   └── seed.ts                         # Seed script
+│   ├── store.ts                            # Zustand cart store
+│   ├── validations.ts                      # Zod schemas
+│   └── utils.ts                            # formatPrice, cn helpers
+└── proxy.ts                                # Auth guard for all routes (Next.js 16 proxy convention)
+```
+
+## Architecture Notes
+
+- **All prices stored as integer cents** (e.g. €4,50 → `450`). Converted to Euro display only on the frontend via `formatPrice()`.
+- **Zustand manages the draft order client-side** — items are added/removed/modified in the browser, then a single `POST /api/orders` creates the final order.
+- **`export const dynamic = "force-dynamic"`** on all pages that query the database.
+- **Touch targets** — all interactive elements maintain a minimum 48px height.
+- **`postgres.js` driver** — not `@neondatabase/serverless`, which uses WebSockets that break local Docker Postgres.
+
+## Deploy to Vercel with Neon Postgres
+
+### 1. Create a Neon database via Vercel Marketplace
+
+1. Go to your Vercel dashboard → **Storage** tab.
+2. Click **Create Database** → select **Neon Postgres**.
+3. Choose a region close to your users and click **Create**.
+4. Vercel automatically sets `DATABASE_URL` as an environment variable linked to your project.
+
+> Alternatively, create one at [console.neon.tech](https://console.neon.tech) and copy the connection string manually.
+
+### 2. Set environment variables in Vercel
+
+In your Vercel project settings → **Environment Variables**, add:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Auto-set if using Vercel Marketplace Neon integration |
+| `NEXTAUTH_URL` | `https://your-domain.vercel.app` |
+| `NEXTAUTH_SECRET` | Generate with `npx auth secret` or `openssl rand -base64 32` |
+
+### 3. Push schema and seed to Neon
+
+Run these commands locally — they use the Neon `DATABASE_URL` to set up the remote database:
+
+```bash
+# Set the Neon connection string for drizzle-kit
+export DATABASE_URL="postgres://user:pass@ep-xxx.region.aws.neon.tech/manolis_pos?sslmode=require"
+
+npm run db:push    # Create tables on Neon
+npm run db:seed    # Seed menu data and admin user
+```
+
+You can find the Neon `DATABASE_URL` in Vercel → Settings → Environment Variables, or in the Neon console.
+
+### 4. Deploy
+
+```bash
+# Option A: Push to GitHub (auto-deploys if connected)
+git push origin main
+
+# Option B: Deploy via Vercel CLI
+npm i -g vercel@latest
+vercel --prod
+```
+
+### 5. Verify
+
+1. Open your production URL.
+2. Log in with `admin@manolis.local` / `admin123`.
+3. You should see the POS screen with all seeded menu items.
+
+> **Security:** Change the default admin password after first deploy. You can do this via the Neon SQL editor or by creating a password-update script.
+
+## [Issues Resolved](./ISSUES-RESOLVED.md)
+
+A log of issues encountered during development, their root causes, and fixes applied.
+
+## Testing
+
+```bash
+npm run lint         # Lint check
+npm run build        # Type-check + build (catches TS errors)
+```
+
+The project uses TypeScript strict mode. The `build` command runs both type-checking and compilation — if it passes, the app is structurally sound.
+
+### Manual test checklist
+
+- [ ] Login with admin credentials redirects to `/pos`
+- [ ] Menu items load with correct categories and prices in Euro format
+- [ ] Category filter chips toggle correctly
+- [ ] Adding items to cart updates the Order Ticket sidebar
+- [ ] Quantity stepper adds/removes items
+- [ ] Notes can be added to individual items
+- [ ] "Send to Kitchen" creates an order and redirects to `/orders`
+- [ ] Order history shows submitted orders with correct totals
+- [ ] Menu Admin page allows editing prices and toggling availability
+- [ ] Logout redirects to login page

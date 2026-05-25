@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #2d636e;
+  --primary-container: #487c88;
+  --on-primary: #ffffff;
+  --on-primary-container: #f8fdff;
+
+  --background: #f8f9fa;
+  --on-background: #191c1d;
+
+  --surface: #f8f9fa;
+  --on-surface: #191c1d;
+  --surface-dim: #d9dadb;
+  --surface-bright: #f8f9fa;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f3f4f5;
+  --surface-container: #edeeef;
+  --surface-container-high: #e7e8e9;
+  --surface-container-highest: #e1e3e4;
+  --secondary: #7f5612;
+  --on-secondary: #ffffff;
+  --secondary-container: #fdc578;
+  --on-secondary-container: #78500b;
+
+  --border: #c0c8ca;
+  --outline: #70787b;
+  --outline-variant: #c0c8ca;
+
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  --tertiary: #79533d;
+  --tertiary-container: #946c54;
+  --on-tertiary-container: #fffbff;
+
+  --warning: #7f5612;
+  --warning-container: #fdc578;
+  --on-warning-container: #78500b;
+}
+
+.dark {
+  --primary: #9acfdc;
+  --primary-container: #124e59;
+  --on-primary: #00363f;
+  --on-primary-container: #b6ebf8;
+
+  --background: #07151a;
+  --on-background: #d6e5eb;
+
+  --surface: #07151a;
+  --on-surface: #d6e5eb;
+  --surface-dim: #07151a;
+  --surface-bright: #2d3b40;
+  --surface-container-lowest: #031014;
+  --surface-container-low: #101e22;
+  --surface-container: #142226;
+  --surface-container-high: #1e2c31;
+  --surface-container-highest: #29373c;
+  --secondary: #f4bd70;
+  --on-secondary: #452b00;
+  --secondary-container: #633f00;
+  --on-secondary-container: #ffddb3;
+
+  --border: #40484a;
+  --outline: #8a9294;
+  --outline-variant: #40484a;
+
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+
+  --tertiary: #eebca0;
+  --tertiary-container: #613f2a;
+  --on-tertiary-container: #ffdbc8;
+
+  --warning: #f4bd70;
+  --warning-container: #633f00;
+  --on-warning-container: #ffddb3;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--background);
+  --color-on-background: var(--on-background);
+
+  --color-surface: var(--surface);
+  --color-on-surface: var(--on-surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-border: var(--border);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+
+  --color-warning: var(--warning);
+  --color-warning-container: var(--warning-container);
+  --color-on-warning-container: var(--on-warning-container);
+
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-body);
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+input:focus {
+  outline: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
