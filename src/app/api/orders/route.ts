@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { orders, orderItems, menuItems } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { createOrderSchema } from "@/lib/validations";
 import { auth } from "@/lib/auth";
 
@@ -20,7 +20,7 @@ export async function GET() {
       status: orders.status,
       totalCents: orders.totalCents,
       createdAt: orders.createdAt,
-      userName: orders.userId,
+      userId: orders.userId,
     })
     .from(orders)
     .orderBy(desc(orders.createdAt));
@@ -45,11 +45,12 @@ export async function POST(request: Request) {
 
   const { tableNumber, items } = parsed.data;
 
-  const menuItemIds = items.map((i) => i.menuItemId);
+  // Only fetch the items actually ordered — never trust client-sent prices.
+  const menuItemIds = [...new Set(items.map((i) => i.menuItemId))];
   const dbItems = await db
-    .select()
+    .select({ id: menuItems.id, priceCents: menuItems.priceCents })
     .from(menuItems)
-    .where(eq(menuItems.available, true));
+    .where(and(inArray(menuItems.id, menuItemIds), eq(menuItems.available, true)));
 
   const priceMap = Object.fromEntries(dbItems.map((i) => [i.id, i.priceCents]));
 
@@ -67,25 +68,33 @@ export async function POST(request: Request) {
     0
   );
 
-  const [order] = await db
-    .insert(orders)
-    .values({
-      userId: session.user.id!,
-      tableNumber: tableNumber ?? null,
-      totalCents,
-      status: "pending",
-    })
-    .returning();
+  const userId = session.user.id!;
 
-  await db.insert(orderItems).values(
-    items.map((item) => ({
-      orderId: order.id,
-      menuItemId: item.menuItemId,
-      quantityGrams: item.quantityGrams,
-      priceAtTimeCents: priceMap[item.menuItemId],
-      notes: item.notes ?? null,
-    }))
-  );
+  // Order + items must be created atomically — a partial order would be
+  // invisible in the history but occupy the table.
+  const order = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(orders)
+      .values({
+        userId,
+        tableNumber: tableNumber ?? null,
+        totalCents,
+        status: "pending",
+      })
+      .returning();
+
+    await tx.insert(orderItems).values(
+      items.map((item) => ({
+        orderId: created.id,
+        menuItemId: item.menuItemId,
+        quantityGrams: item.quantityGrams,
+        priceAtTimeCents: priceMap[item.menuItemId],
+        notes: item.notes ?? null,
+      }))
+    );
+
+    return created;
+  });
 
   return NextResponse.json(order, { status: 201 });
 }

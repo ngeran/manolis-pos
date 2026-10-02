@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
@@ -12,6 +12,19 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Manolis Orders — POS",
   description: "Fast, simple, reliable order taking",
+};
+
+// viewportFit: "cover" lets the fixed header and floating cart extend into
+// the iPhone/iPad notch and home-indicator areas; layouts compensate with
+// env(safe-area-inset-*) padding.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f9fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#07151a" },
+  ],
 };
 
 export default function RootLayout({

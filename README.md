@@ -148,7 +148,7 @@ src/
 │   ├── store.ts                            # Zustand cart store
 │   ├── validations.ts                      # Zod schemas
 │   └── utils.ts                            # formatPrice, cn helpers
-└── proxy.ts                                # Auth guard for all routes (Next.js 16 proxy convention)
+└── middleware.ts                           # Auth guard for all pages (API routes enforce auth themselves)
 ```
 
 ## Architecture Notes

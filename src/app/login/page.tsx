@@ -33,7 +33,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-dvh flex items-center justify-center bg-background">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="text-5xl font-bold text-primary mb-1">Manolis</h1>

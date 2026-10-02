@@ -17,6 +17,7 @@ export default function POSPage() {
   const [submitting, setSubmitting] = useState(false);
   const [weightPickerItem, setWeightPickerItem] = useState<MenuItemData | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const addItem = useOrderStore((s) => s.addItem);
   const cartItems = useOrderStore((s) => s.items);
   const totalCents = useOrderStore((s) => s.totalCents);
@@ -71,6 +72,7 @@ export default function POSPage() {
   const handleSubmit = async () => {
     if (cartItems.length === 0) return;
     setSubmitting(true);
+    setSubmitError(null);
 
     try {
       const res = await fetch("/api/orders", {
@@ -88,11 +90,16 @@ export default function POSPage() {
 
       if (res.ok) {
         clearCart();
+        setMobileCartOpen(false);
         router.push("/orders");
       } else {
-        const err = await res.json();
-        alert(err.error || "Failed to submit order");
+        const err = await res.json().catch(() => null);
+        setSubmitError(
+          typeof err?.error === "string" ? err.error : "Failed to submit order"
+        );
       }
+    } catch {
+      setSubmitError("Network error — check the connection and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -111,19 +118,19 @@ export default function POSPage() {
         />
       </div>
 
-      {/* Desktop: sidebar order ticket */}
-      <div className="hidden lg:flex">
+      {/* Tablet/desktop: sidebar order ticket */}
+      <div className="hidden md:flex">
         <OrderTicket onSubmit={handleSubmit} submitting={submitting} />
       </div>
 
-      {/* Mobile: floating cart button + bottom drawer */}
+      {/* Phone: floating cart button + bottom drawer */}
       {cartItems.length > 0 && (
-        <div className="lg:hidden">
+        <div className="md:hidden">
           {/* Floating cart button */}
           {!mobileCartOpen && (
             <button
               onClick={() => setMobileCartOpen(true)}
-              className="fixed bottom-6 right-6 z-30 bg-primary text-on-primary rounded-2xl px-5 py-4 shadow-lg flex items-center gap-3 min-h-[56px] font-bold text-base"
+              className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 z-30 bg-primary text-on-primary rounded-2xl px-5 py-4 shadow-lg flex items-center gap-3 min-h-[56px] font-bold text-base"
             >
               <span className="material-symbols-outlined">shopping_cart</span>
               <span>{cartItems.length}</span>
@@ -141,12 +148,11 @@ export default function POSPage() {
 
           {/* Bottom sheet */}
           <div
-            className={`fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-2xl border-t border-outline-variant transition-transform duration-300 ${
+            className={`fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-2xl border-t border-outline-variant transition-transform duration-300 pb-[env(safe-area-inset-bottom)] max-h-[85dvh] ${
               mobileCartOpen ? "translate-y-0" : "translate-y-full"
             }`}
-            style={{ maxHeight: "85vh" }}
           >
-            <div className="flex flex-col" style={{ maxHeight: "85vh" }}>
+            <div className="flex flex-col max-h-[85dvh]">
               {/* Drag handle + header */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-outline-variant" />
@@ -231,6 +237,22 @@ export default function POSPage() {
           onConfirm={handleWeightConfirm}
           onCancel={() => setWeightPickerItem(null)}
         />
+      )}
+
+      {submitError && (
+        <div
+          role="alert"
+          className="fixed left-1/2 -translate-x-1/2 top-[calc(4.5rem+env(safe-area-inset-top))] z-[60] bg-error-container text-on-error-container pl-4 pr-2 py-2 rounded-xl shadow-lg flex items-center gap-2 max-w-[calc(100vw-2rem)]"
+        >
+          <span className="material-symbols-outlined text-[20px]">error</span>
+          <span className="text-sm font-semibold">{submitError}</span>
+          <button
+            onClick={() => setSubmitError(null)}
+            className="p-2 rounded-lg hover:bg-on-error-container/10 min-h-[40px] min-w-[40px] flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
       )}
     </>
   );

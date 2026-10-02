@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface CartItem {
   menuItemId: string;
@@ -26,62 +27,73 @@ interface OrderState {
 
 const TAX_RATE = 0.13;
 
-export const useOrderStore = create<OrderState>((set, get) => ({
-  tableNumber: "",
-  items: [],
+export const useOrderStore = create<OrderState>()(
+  persist(
+    (set, get) => ({
+      tableNumber: "",
+      items: [],
 
-  setTableNumber: (table) => set({ tableNumber: table }),
+      setTableNumber: (table) => set({ tableNumber: table }),
 
-  addItem: (item) =>
-    set((state) => {
-      const existing = state.items.find((i) => i.menuItemId === item.menuItemId);
-      if (existing) {
-        return {
+      addItem: (item) =>
+        set((state) => {
+          const existing = state.items.find((i) => i.menuItemId === item.menuItemId);
+          if (existing) {
+            return {
+              items: state.items.map((i) =>
+                i.menuItemId === item.menuItemId
+                  ? { ...i, quantityGrams: i.quantityGrams + item.quantityGrams }
+                  : i
+              ),
+            };
+          }
+          return { items: [...state.items, item] };
+        }),
+
+      removeItem: (menuItemId) =>
+        set((state) => ({
+          items: state.items.filter((i) => i.menuItemId !== menuItemId),
+        })),
+
+      updateQuantityGrams: (menuItemId, grams) =>
+        set((state) => {
+          if (grams <= 0) {
+            return { items: state.items.filter((i) => i.menuItemId !== menuItemId) };
+          }
+          return {
+            items: state.items.map((i) =>
+              i.menuItemId === menuItemId ? { ...i, quantityGrams: grams } : i
+            ),
+          };
+        }),
+
+      updateNotes: (menuItemId, notes) =>
+        set((state) => ({
           items: state.items.map((i) =>
-            i.menuItemId === item.menuItemId
-              ? { ...i, quantityGrams: i.quantityGrams + item.quantityGrams }
-              : i
+            i.menuItemId === menuItemId ? { ...i, notes } : i
           ),
-        };
-      }
-      return { items: [...state.items, item] };
-    }),
+        })),
 
-  removeItem: (menuItemId) =>
-    set((state) => ({
-      items: state.items.filter((i) => i.menuItemId !== menuItemId),
-    })),
+      clearCart: () => set({ items: [], tableNumber: "" }),
 
-  updateQuantityGrams: (menuItemId, grams) =>
-    set((state) => {
-      if (grams <= 0) {
-        return { items: state.items.filter((i) => i.menuItemId !== menuItemId) };
-      }
-      return {
-        items: state.items.map((i) =>
-          i.menuItemId === menuItemId ? { ...i, quantityGrams: grams } : i
+      itemCount: () => get().items.length,
+
+      subtotalCents: () =>
+        get().items.reduce(
+          (sum, i) => sum + Math.round((i.priceCents * i.quantityGrams) / 1000),
+          0
         ),
-      };
+
+      taxCents: () => Math.round(get().subtotalCents() * TAX_RATE),
+
+      totalCents: () => get().subtotalCents() + get().taxCents(),
     }),
-
-  updateNotes: (menuItemId, notes) =>
-    set((state) => ({
-      items: state.items.map((i) =>
-        i.menuItemId === menuItemId ? { ...i, notes } : i
-      ),
-    })),
-
-  clearCart: () => set({ items: [], tableNumber: "" }),
-
-  itemCount: () => get().items.length,
-
-  subtotalCents: () =>
-    get().items.reduce(
-      (sum, i) => sum + Math.round((i.priceCents * i.quantityGrams) / 1000),
-      0
-    ),
-
-  taxCents: () => Math.round(get().subtotalCents() * TAX_RATE),
-
-  totalCents: () => get().subtotalCents() + get().taxCents(),
-}));
+    {
+      name: "manolis-cart",
+      version: 1,
+      // Rehydrated manually in the app layout effect so the SSR markup
+      // (which always renders an empty cart) matches the first client render.
+      skipHydration: true,
+    }
+  )
+);

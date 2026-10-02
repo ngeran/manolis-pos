@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useOrderStore } from "@/lib/store";
 import { useTheme } from "@/components/ThemeProvider";
@@ -17,18 +17,23 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const tableNumber = useOrderStore((s) => s.tableNumber);
   const setTableNumber = useOrderStore((s) => s.setTableNumber);
   const { theme, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // The cart persists to localStorage; rehydrate after mount so the SSR
+  // markup (which always renders an empty cart) matches the first client render.
+  useEffect(() => {
+    useOrderStore.persist.rehydrate();
+  }, []);
 
   const isActive = (href: string) =>
     href === "/pos" ? pathname === "/pos" || pathname === "/" : pathname.startsWith(href);
 
   return (
     <>
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center h-16 px-3 md:px-6 bg-surface border-b border-outline-variant">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-3 md:px-6 bg-surface border-b border-outline-variant">
         <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={() => setSidebarOpen((o) => !o)}
@@ -43,7 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="hidden md:flex ml-6 lg:ml-10 bg-surface-container-low px-3 py-1 rounded-full items-center gap-1">
             <span className="material-symbols-outlined text-outline text-xl">search</span>
             <input
-              className="bg-transparent border-none focus:ring-0 text-sm font-semibold w-32 lg:w-64 text-on-surface"
+              className="bg-transparent border-none focus:ring-0 text-base font-semibold w-32 lg:w-64 text-on-surface"
               placeholder="Search menu items..."
               type="text"
             />
@@ -57,7 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               placeholder="Table #"
-              className="w-16 md:w-20 text-sm font-semibold text-primary bg-transparent border-b border-primary-container focus:outline-none text-center"
+              className="w-20 md:w-24 text-base font-semibold text-primary bg-transparent border-b border-primary-container focus:outline-none text-center"
             />
           </div>
           <div className="flex items-center gap-1 md:gap-3">
@@ -89,14 +94,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      <div className="flex h-screen pt-16">
+      <div className="flex h-dvh pt-[calc(4rem+env(safe-area-inset-top))]">
         <nav
           className={cn(
             "fixed left-0 top-0 h-full w-[280px] z-40 flex flex-col p-3 bg-surface-container-low border-r border-outline-variant transition-transform duration-300 ease-in-out",
             !sidebarOpen && "-translate-x-full"
           )}
         >
-          <div className="flex flex-col gap-1 flex-grow mt-16">
+          <div className="flex flex-col gap-1 flex-grow mt-[calc(4rem+env(safe-area-inset-top))]">
             {navItems.map((item) => (
               <Link
                 key={item.href}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useOrderStore } from "@/lib/store";
+import { useState } from "react";
+import { useOrderStore, type CartItem } from "@/lib/store";
 import { formatPrice, formatWeight, calculateLineTotal } from "@/lib/utils";
 import { QuantityStepper } from "./QuantityStepper";
+import { NoteModal } from "./NoteModal";
 import { Button } from "@/components/ui/Button";
 
 interface OrderTicketProps {
@@ -13,10 +15,11 @@ interface OrderTicketProps {
 export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
   const { items, removeItem, updateQuantityGrams, updateNotes, clearCart, subtotalCents, taxCents, totalCents, itemCount } =
     useOrderStore();
+  const [editingNotesFor, setEditingNotesFor] = useState<CartItem | null>(null);
 
   if (items.length === 0) {
     return (
-      <aside className="w-[340px] bg-surface border-l border-outline-variant flex flex-col">
+      <aside className="w-[300px] lg:w-[340px] bg-surface border-l border-outline-variant flex flex-col">
         <div className="p-6 border-b border-outline-variant bg-surface-container-low">
           <h2 className="text-2xl font-bold text-on-surface">Current Order</h2>
         </div>
@@ -34,7 +37,8 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
   }
 
   return (
-    <aside className="w-[340px] bg-surface border-l border-outline-variant flex flex-col">
+    <>
+    <aside className="w-[300px] lg:w-[340px] bg-surface border-l border-outline-variant flex flex-col">
       <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
         <h2 className="text-2xl font-bold text-on-surface">Current Order</h2>
         <span className="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-bold text-xs">
@@ -93,10 +97,7 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
               )}
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => {
-                    const notes = prompt("Notes for this item:", item.notes ?? "");
-                    if (notes !== null) updateNotes(item.menuItemId, notes);
-                  }}
+                  onClick={() => setEditingNotesFor(item)}
                   className="text-outline hover:bg-surface-container-high p-1 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                   title="Add notes"
                 >
@@ -148,5 +149,18 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
         </div>
       </div>
     </aside>
+
+      {editingNotesFor && (
+        <NoteModal
+          itemName={editingNotesFor.name}
+          initialNotes={editingNotesFor.notes ?? ""}
+          onConfirm={(notes) => {
+            updateNotes(editingNotesFor.menuItemId, notes);
+            setEditingNotesFor(null);
+          }}
+          onCancel={() => setEditingNotesFor(null)}
+        />
+      )}
+    </>
   );
 }
