@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { db } from "./index";
-import { users, categories, menuItems, stations } from "./schema";
+import { users, categories, menuItems, stations, diningTables } from "./schema";
 import { hashSync } from "bcryptjs";
 
 type StationSlug = "grill" | "fryer" | "salads" | "bar";
@@ -33,6 +33,16 @@ async function seed() {
 
   const allStations = await db.select().from(stations);
   const stationMap = Object.fromEntries(allStations.map((s) => [s.slug, s.id]));
+
+  // ── Dining tables (1–12: 2/4/6 seats) ──
+  await db
+    .insert(diningTables)
+    .values([
+      ...Array.from({ length: 6 }, (_, i) => ({ name: String(i + 1), seats: 2, sortOrder: i })),
+      ...Array.from({ length: 4 }, (_, i) => ({ name: String(i + 7), seats: 4, sortOrder: i + 6 })),
+      ...Array.from({ length: 2 }, (_, i) => ({ name: String(i + 11), seats: 6, sortOrder: i + 10 })),
+    ])
+    .onConflictDoNothing();
 
   // ── Categories ──
   const categoryData = [

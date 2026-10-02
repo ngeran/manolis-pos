@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePolling } from "@/hooks/usePolling";
 import { useServerClock } from "@/hooks/useServerClock";
 import { StatusChip } from "@/components/service/StatusChip";
+import { TableView } from "@/components/service/TableView";
 import { formatPrice, cn } from "@/lib/utils";
 import { ageClass, ageChipClasses, formatAge, voidReasonMeta } from "@/lib/kitchen";
 import type { BoardOrder, OrdersPayload } from "@/lib/kitchen";
@@ -13,10 +14,25 @@ const POLL_MS = 5000;
 
 export default function OrdersPage() {
   const [tab, setTab] = useState<"active" | "closed">("active");
+  const [view, setView] = useState<"list" | "tables">("list");
   const { data, isStale } = usePolling<OrdersPayload>(`/api/orders?scope=${tab}`, {
     intervalMs: POLL_MS,
   });
   const nowMs = useServerClock(data?.serverTime);
+
+  // Remember the last view. One-time client init keeps SSR markup deterministic.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    const stored = localStorage.getItem("orders-view");
+    if (stored === "list" || stored === "tables") setView(stored);
+  }, []);
+
+  const selectView = (next: "list" | "tables") => {
+    setView(next);
+    localStorage.setItem("orders-view", next);
+  };
+
+  const tableView = tab === "active" && view === "tables";
 
   const orders = useMemo(() => {
     const list = [...(data?.orders ?? [])];
@@ -36,29 +52,59 @@ export default function OrdersPage() {
     <div className="w-full p-4 md:p-6 overflow-y-auto">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <h1 className="text-3xl font-bold text-on-surface">Παραγγελίες</h1>
-        <div className="flex bg-surface-container-low rounded-full p-1">
-          <button
-            onClick={() => setTab("active")}
-            className={cn(
-              "px-5 py-2 rounded-full font-bold text-sm min-h-[44px]",
-              tab === "active"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface hover:bg-surface-container-high"
-            )}
-          >
-            Ενεργές
-          </button>
-          <button
-            onClick={() => setTab("closed")}
-            className={cn(
-              "px-5 py-2 rounded-full font-bold text-sm min-h-[44px]",
-              tab === "closed"
-                ? "bg-primary text-on-primary"
-                : "text-on-surface hover:bg-surface-container-high"
-            )}
-          >
-            Ιστορικό
-          </button>
+        <div className="flex flex-wrap gap-2 items-center">
+          {tab === "active" && (
+            <div className="flex bg-surface-container-low rounded-full p-1">
+              <button
+                onClick={() => selectView("list")}
+                className={cn(
+                  "px-4 py-2 rounded-full font-bold text-sm min-h-[44px] flex items-center gap-1.5",
+                  view === "list"
+                    ? "bg-primary text-on-primary"
+                    : "text-on-surface hover:bg-surface-container-high"
+                )}
+              >
+                <span className="material-symbols-outlined text-[18px]">list</span>
+                Λίστα
+              </button>
+              <button
+                onClick={() => selectView("tables")}
+                className={cn(
+                  "px-4 py-2 rounded-full font-bold text-sm min-h-[44px] flex items-center gap-1.5",
+                  view === "tables"
+                    ? "bg-primary text-on-primary"
+                    : "text-on-surface hover:bg-surface-container-high"
+                )}
+              >
+                <span className="material-symbols-outlined text-[18px]">table_restaurant</span>
+                Τραπέζια
+              </button>
+            </div>
+          )}
+          <div className="flex bg-surface-container-low rounded-full p-1">
+            <button
+              onClick={() => setTab("active")}
+              className={cn(
+                "px-5 py-2 rounded-full font-bold text-sm min-h-[44px]",
+                tab === "active"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface hover:bg-surface-container-high"
+              )}
+            >
+              Ενεργές
+            </button>
+            <button
+              onClick={() => setTab("closed")}
+              className={cn(
+                "px-5 py-2 rounded-full font-bold text-sm min-h-[44px]",
+                tab === "closed"
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface hover:bg-surface-container-high"
+              )}
+            >
+              Ιστορικό
+            </button>
+          </div>
         </div>
       </div>
 
@@ -68,7 +114,9 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {orders.length === 0 ? (
+      {tableView ? (
+        <TableView orders={orders} nowMs={nowMs} />
+      ) : orders.length === 0 ? (
         <div className="text-center py-10 text-outline">
           <span className="material-symbols-outlined text-[64px] block mb-3">
             receipt_long

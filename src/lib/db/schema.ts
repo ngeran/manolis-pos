@@ -60,6 +60,13 @@ export const stations = pgTable("stations", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+export const diningTables = pgTable("dining_tables", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  seats: integer("seats"),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
 export const menuItems = pgTable(
   "menu_items",
   {

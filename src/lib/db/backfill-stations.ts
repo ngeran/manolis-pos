@@ -49,6 +49,20 @@ async function migrate() {
     ('bar', 'Μπαρ', 'Bar', 3)
     ON CONFLICT (slug) DO NOTHING`);
 
+  // ── 2b. Dining tables (1–12, admin-editable later) ──
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS dining_tables (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text NOT NULL CONSTRAINT dining_tables_name_unique UNIQUE,
+    seats integer,
+    sort_order integer NOT NULL DEFAULT 0
+  )`);
+  await db.execute(sql`INSERT INTO dining_tables (name, seats, sort_order)
+    SELECT g.name,
+      CASE WHEN g.n <= 6 THEN 2 WHEN g.n <= 10 THEN 4 ELSE 6 END,
+      g.n - 1
+    FROM (SELECT generate_series(1, 12) AS n, generate_series(1, 12)::text AS name) g
+    ON CONFLICT (name) DO NOTHING`);
+
   // ── 3. menu_items.station_id (nullable until mapped) ──
   await db.execute(sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS station_id uuid REFERENCES stations(id)`);
   // Grill: grilled/oven items + all meats + grilled fish

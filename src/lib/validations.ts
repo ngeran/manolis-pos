@@ -97,3 +97,20 @@ export const updateCategorySchema = z.object({
 export const deleteCategorySchema = z.object({
   id: z.string().uuid(),
 });
+
+export const createTableSchema = z.object({
+  name: z.string().min(1),
+  seats: z.number().int().min(1).optional(),
+  sortOrder: z.number().int().default(0),
+});
+
+export const updateTableSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).optional(),
+  seats: z.number().int().min(1).optional().nullable(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const deleteTableSchema = z.object({
+  id: z.string().uuid(),
+});

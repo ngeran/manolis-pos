@@ -87,6 +87,15 @@ export interface OrdersPayload {
   orders: BoardOrder[];
 }
 
+// ── /api/tables payload ──
+
+export interface DiningTable {
+  id: string;
+  name: string;
+  seats: number | null;
+  sortOrder: number;
+}
+
 // ── /api/orders/[id] payload types ──
 
 export interface OrderDetailItem {
