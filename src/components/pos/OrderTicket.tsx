@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useOrderStore, type CartItem } from "@/lib/store";
-import { formatPrice, formatWeight, calculateLineTotal } from "@/lib/utils";
+import { formatPrice, formatWeight, calculateLineTotal, cn } from "@/lib/utils";
 import { QuantityStepper } from "./QuantityStepper";
 import { NoteModal } from "./NoteModal";
 import { Button } from "@/components/ui/Button";
@@ -10,11 +10,23 @@ import { Button } from "@/components/ui/Button";
 interface OrderTicketProps {
   onSubmit: () => void;
   submitting?: boolean;
+  /** True while appending a round to an existing live order. */
+  appendMode?: boolean;
 }
 
-export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
-  const { items, removeItem, updateQuantityGrams, updateNotes, clearCart, subtotalCents, taxCents, totalCents, itemCount } =
-    useOrderStore();
+export function OrderTicket({ onSubmit, submitting, appendMode }: OrderTicketProps) {
+  const {
+    items,
+    removeItem,
+    updateQuantityGrams,
+    updateNotes,
+    updateHold,
+    clearCart,
+    subtotalCents,
+    taxCents,
+    totalCents,
+    itemCount,
+  } = useOrderStore();
   const [editingNotesFor, setEditingNotesFor] = useState<CartItem | null>(null);
 
   if (items.length === 0) {
@@ -56,6 +68,9 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
               <div>
                 <h4 className="font-normal text-base text-on-surface">
                   {item.name}
+                  {item.hold && (
+                    <span className="text-secondary text-xs font-bold ml-2">· Αναμονή</span>
+                  )}
                 </h4>
                 {item.notes && (
                   <span className="text-xs font-medium text-tertiary">
@@ -97,6 +112,18 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
               )}
               <div className="flex items-center gap-1">
                 <button
+                  onClick={() => updateHold(item.menuItemId, !(item.hold ?? false))}
+                  className={cn(
+                    "p-1 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center",
+                    item.hold
+                      ? "text-secondary bg-secondary-container/40"
+                      : "text-outline hover:bg-surface-container-high"
+                  )}
+                  title={item.hold ? "Κρατάμε — δεν στέλνεται ακόμα στην κουζίνα" : "Κράτα για αργότερα (hold)"}
+                >
+                  <span className="material-symbols-outlined">schedule</span>
+                </button>
+                <button
                   onClick={() => setEditingNotesFor(item)}
                   className="text-outline hover:bg-surface-container-high p-1 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                   title="Add notes"
@@ -129,6 +156,11 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
             <span>Total</span>
             <span className="text-primary">{formatPrice(totalCents())}</span>
           </div>
+          {appendMode && (
+            <p className="text-xs font-semibold text-outline -mt-2">
+              Νέα είδη μόνο — το σύνολο της παραγγελίας ενημερώνεται αυτόματα
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
           <Button variant="ghost" size="md" onClick={clearCart} className="flex-shrink-0">
@@ -144,7 +176,13 @@ export function OrderTicket({ onSubmit, submitting }: OrderTicketProps) {
             <span className="material-symbols-outlined text-[28px]">
               restaurant_menu
             </span>{" "}
-            {submitting ? "Sending..." : "Send to Kitchen"}
+            {submitting
+              ? appendMode
+                ? "Adding..."
+                : "Sending..."
+              : appendMode
+                ? "Add to Order"
+                : "Send to Kitchen"}
           </Button>
         </div>
       </div>

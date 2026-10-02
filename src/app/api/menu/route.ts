@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { menuItems, categories } from "@/lib/db/schema";
+import { menuItems, categories, stations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { createMenuItemSchema, updateMenuItemSchema } from "@/lib/validations";
 import { auth } from "@/lib/auth";
@@ -27,9 +27,14 @@ export async function GET() {
       categoryId: menuItems.categoryId,
       categoryNameEl: categories.nameEl,
       categoryNameEn: categories.nameEn,
+      stationId: menuItems.stationId,
+      stationSlug: stations.slug,
+      stationNameEl: stations.nameEl,
+      stationNameEn: stations.nameEn,
     })
     .from(menuItems)
-    .leftJoin(categories, eq(menuItems.categoryId, categories.id));
+    .leftJoin(categories, eq(menuItems.categoryId, categories.id))
+    .leftJoin(stations, eq(menuItems.stationId, stations.id));
 
   return NextResponse.json(result);
 }

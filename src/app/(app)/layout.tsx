@@ -9,8 +9,9 @@ import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/pos", label: "Tables", icon: "table_restaurant" },
-  { href: "/orders", label: "History", icon: "history" },
+  { href: "/pos", label: "New Order", icon: "table_restaurant" },
+  { href: "/orders", label: "Orders", icon: "history" },
+  { href: "/kitchen", label: "Kitchen", icon: "skillet" },
   { href: "/admin/menu", label: "Menu Admin", icon: "restaurant" },
   { href: "/admin/categories", label: "Categories", icon: "category" },
 ];

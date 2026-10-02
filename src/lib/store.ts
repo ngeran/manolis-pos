@@ -8,17 +8,25 @@ export interface CartItem {
   pricingType: "unit" | "weight";
   quantityGrams: number;
   notes?: string;
+  /** Held items don't reach the stations until someone fires them. */
+  hold?: boolean;
 }
 
 interface OrderState {
   tableNumber: string;
   items: CartItem[];
+  /** When set, submitting appends a new round to that live order. */
+  editOrderId: string | null;
+  editOrderLabel: string | null;
   setTableNumber: (table: string) => void;
   addItem: (item: Omit<CartItem, "quantityGrams"> & { quantityGrams: number }) => void;
   removeItem: (menuItemId: string) => void;
   updateQuantityGrams: (menuItemId: string, grams: number) => void;
   updateNotes: (menuItemId: string, notes: string) => void;
+  updateHold: (menuItemId: string, hold: boolean) => void;
   clearCart: () => void;
+  startEditOrder: (orderId: string, label: string) => void;
+  stopEditOrder: () => void;
   itemCount: () => number;
   subtotalCents: () => number;
   taxCents: () => number;
@@ -32,6 +40,8 @@ export const useOrderStore = create<OrderState>()(
     (set, get) => ({
       tableNumber: "",
       items: [],
+      editOrderId: null,
+      editOrderLabel: null,
 
       setTableNumber: (table) => set({ tableNumber: table }),
 
@@ -74,7 +84,19 @@ export const useOrderStore = create<OrderState>()(
           ),
         })),
 
-      clearCart: () => set({ items: [], tableNumber: "" }),
+      updateHold: (menuItemId, hold) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.menuItemId === menuItemId ? { ...i, hold } : i
+          ),
+        })),
+
+      clearCart: () => set({ items: [], tableNumber: "", editOrderId: null, editOrderLabel: null }),
+
+      startEditOrder: (orderId, label) =>
+        set({ editOrderId: orderId, editOrderLabel: label }),
+
+      stopEditOrder: () => set({ editOrderId: null, editOrderLabel: null }),
 
       itemCount: () => get().items.length,
 
@@ -90,7 +112,16 @@ export const useOrderStore = create<OrderState>()(
     }),
     {
       name: "manolis-cart",
-      version: 1,
+      version: 2,
+      migrate: (persisted) => {
+        const state = persisted as Partial<OrderState> | undefined;
+        return {
+          ...state,
+          items: (state?.items ?? []).map((i) => ({ ...i, hold: i.hold ?? false })),
+          editOrderId: null,
+          editOrderLabel: null,
+        } as OrderState;
+      },
       // Rehydrated manually in the app layout effect so the SSR markup
       // (which always renders an empty cart) matches the first client render.
       skipHydration: true,

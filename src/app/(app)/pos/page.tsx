@@ -5,7 +5,7 @@ import { MenuGrid, MenuItemData } from "@/components/pos/MenuGrid";
 import { OrderTicket } from "@/components/pos/OrderTicket";
 import { WeightPickerModal } from "@/components/pos/WeightPickerModal";
 import { useOrderStore } from "@/lib/store";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,9 @@ export default function POSPage() {
   const totalCents = useOrderStore((s) => s.totalCents);
   const tableNumber = useOrderStore((s) => s.tableNumber);
   const clearCart = useOrderStore((s) => s.clearCart);
+  const editOrderId = useOrderStore((s) => s.editOrderId);
+  const editOrderLabel = useOrderStore((s) => s.editOrderLabel);
+  const stopEditOrder = useOrderStore((s) => s.stopEditOrder);
   const router = useRouter();
 
   useEffect(() => {
@@ -80,23 +83,28 @@ export default function POSPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tableNumber: tableNumber || undefined,
+          orderId: editOrderId || undefined,
           items: cartItems.map((i) => ({
             menuItemId: i.menuItemId,
             quantityGrams: i.quantityGrams,
             notes: i.notes,
+            hold: i.hold ?? false,
           })),
         }),
       });
 
       if (res.ok) {
+        const target = editOrderId ? `/orders/${editOrderId}` : "/orders";
         clearCart();
         setMobileCartOpen(false);
-        router.push("/orders");
+        router.push(target);
       } else {
         const err = await res.json().catch(() => null);
         setSubmitError(
           typeof err?.error === "string" ? err.error : "Failed to submit order"
         );
+        // Appending to an order that was closed meanwhile — exit edit mode.
+        if (res.status === 409) stopEditOrder();
       }
     } catch {
       setSubmitError("Network error — check the connection and try again.");
@@ -107,6 +115,21 @@ export default function POSPage() {
 
   return (
     <>
+      {/* Append-mode banner */}
+      {editOrderId && (
+        <div className="bg-secondary text-on-secondary px-4 py-1.5 flex items-center justify-between gap-3 shrink-0">
+          <span className="text-sm font-bold truncate">
+            Προσθήκη σε {editOrderLabel}
+          </span>
+          <button
+            onClick={stopEditOrder}
+            className="text-xs font-bold underline underline-offset-2 min-h-[44px] px-2 shrink-0"
+          >
+            Έξοδος
+          </button>
+        </div>
+      )}
+
       {/* Menu area: full width on mobile, flexible on desktop */}
       <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
         <MenuGrid
@@ -120,7 +143,7 @@ export default function POSPage() {
 
       {/* Tablet/desktop: sidebar order ticket */}
       <div className="hidden md:flex">
-        <OrderTicket onSubmit={handleSubmit} submitting={submitting} />
+        <OrderTicket onSubmit={handleSubmit} submitting={submitting} appendMode={!!editOrderId} />
       </div>
 
       {/* Phone: floating cart button + bottom drawer */}
@@ -180,15 +203,34 @@ export default function POSPage() {
                     className="flex justify-between items-start p-3 bg-surface-container-low rounded-xl border border-outline-variant"
                   >
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-base text-on-surface truncate">{item.name}</h4>
+                      <h4 className="font-medium text-base text-on-surface truncate">
+                        {item.name}
+                        {item.hold && (
+                          <span className="text-secondary text-xs font-bold ml-2">
+                            · Αναμονή
+                          </span>
+                        )}
+                      </h4>
                       {item.notes && (
                         <span className="text-xs font-medium text-tertiary">{item.notes}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 ml-3 shrink-0">
-                      <span className="font-bold text-on-surface">
+                    <div className="flex items-center gap-1 ml-3 shrink-0">
+                      <span className="font-bold text-on-surface mr-1">
                         {formatPrice(Math.round((item.priceCents * item.quantityGrams) / 1000))}
                       </span>
+                      <button
+                        onClick={() =>
+                          useOrderStore.getState().updateHold(item.menuItemId, !(item.hold ?? false))
+                        }
+                        className={cn(
+                          "p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center",
+                          item.hold ? "text-secondary bg-secondary-container/40" : "text-outline"
+                        )}
+                        title={item.hold ? "Κρατάμε — δεν στέλνεται ακόμα στην κουζίνα" : "Κράτα για αργότερα (hold)"}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">schedule</span>
+                      </button>
                       <button
                         onClick={() => useOrderStore.getState().removeItem(item.menuItemId)}
                         className="text-error p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"

@@ -19,10 +19,19 @@ interface MenuItem {
   categoryNameEl: string | null;
   categoryNameEn: string | null;
   categoryId: string;
+  stationId: string;
+  stationNameEl: string | null;
 }
 
 interface Category {
   id: string;
+  nameEl: string;
+  nameEn: string;
+}
+
+interface Station {
+  id: string;
+  slug: string;
   nameEl: string;
   nameEn: string;
 }
@@ -33,6 +42,7 @@ interface ItemForm {
   descriptionEl: string;
   descriptionEn: string;
   categoryId: string;
+  stationId: string;
   priceEuros: string;
   pricingType: "unit" | "weight";
   available: boolean;
@@ -45,6 +55,7 @@ const emptyForm: ItemForm = {
   descriptionEl: "",
   descriptionEn: "",
   categoryId: "",
+  stationId: "",
   priceEuros: "",
   pricingType: "unit",
   available: true,
@@ -54,6 +65,7 @@ const emptyForm: ItemForm = {
 export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<MenuItem>>({});
   const [showAddModal, setShowAddModal] = useState(false);
@@ -76,6 +88,13 @@ export default function AdminMenuPage() {
         return r.json();
       })
       .then(setCategories)
+      .catch(console.error);
+    fetch("/api/stations")
+      .then((r) => {
+        if (!r.ok) throw new Error(`Stations API: ${r.status}`);
+        return r.json();
+      })
+      .then(setStations)
       .catch(console.error);
   }, []);
 
@@ -155,8 +174,8 @@ export default function AdminMenuPage() {
   };
 
   const handleCreateItem = async () => {
-    if (!form.nameEl || !form.nameEn || !form.categoryId || !form.priceEuros) {
-      alert("Please fill in name (EL & EN), category, and price.");
+    if (!form.nameEl || !form.nameEn || !form.categoryId || !form.stationId || !form.priceEuros) {
+      alert("Please fill in name (EL & EN), category, station, and price.");
       return;
     }
     setSaving(true);
@@ -170,6 +189,7 @@ export default function AdminMenuPage() {
           descriptionEl: form.descriptionEl || undefined,
           descriptionEn: form.descriptionEn || undefined,
           categoryId: form.categoryId,
+          stationId: form.stationId,
           priceCents: Math.round(parseFloat(form.priceEuros) * 100),
           pricingType: form.pricingType,
           available: form.available,
@@ -356,6 +376,27 @@ export default function AdminMenuPage() {
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.nameEl} / {cat.nameEn}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Station */}
+              <div>
+                <label className="block text-sm font-semibold text-on-surface mb-1">
+                  Prep Station *
+                </label>
+                <select
+                  className="w-full border border-outline-variant rounded-lg px-3 py-2 bg-surface"
+                  value={form.stationId}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, stationId: e.target.value }))
+                  }
+                >
+                  <option value="">Select station...</option>
+                  {stations.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.nameEl} / {st.nameEn}
                     </option>
                   ))}
                 </select>
@@ -554,21 +595,43 @@ export default function AdminMenuPage() {
                 </td>
                 <td className="p-3 text-base text-outline">
                   {editing === item.id ? (
-                    <select
-                      className="border border-outline-variant rounded-lg px-3 py-1 text-base bg-surface"
-                      value={editData.categoryId ?? item.categoryId}
-                      onChange={(e) =>
-                        setEditData({ ...editData, categoryId: e.target.value })
-                      }
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.nameEl} / {cat.nameEn}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-col gap-2">
+                      <select
+                        className="border border-outline-variant rounded-lg px-3 py-1 text-base bg-surface"
+                        value={editData.categoryId ?? item.categoryId}
+                        onChange={(e) =>
+                          setEditData({ ...editData, categoryId: e.target.value })
+                        }
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.nameEl} / {cat.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="border border-outline-variant rounded-lg px-3 py-1 text-base bg-surface"
+                        value={editData.stationId ?? item.stationId}
+                        onChange={(e) =>
+                          setEditData({ ...editData, stationId: e.target.value })
+                        }
+                      >
+                        {stations.map((st) => (
+                          <option key={st.id} value={st.id}>
+                            {st.nameEl} / {st.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   ) : (
-                    <span>{item.categoryNameEl}</span>
+                    <div>
+                      <span>{item.categoryNameEl}</span>
+                      {item.stationNameEl && (
+                        <span className="block text-xs text-outline">
+                          {item.stationNameEl}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="p-3 font-bold text-on-surface">

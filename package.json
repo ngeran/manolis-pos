@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:seed": "npx dotenv -e .env.local -- tsx src/lib/db/seed.ts"
+    "db:seed": "npx dotenv -e .env.local -- tsx src/lib/db/seed.ts",
+    "db:migrate-kitchen": "npx dotenv -e .env.local -- tsx src/lib/db/backfill-stations.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
