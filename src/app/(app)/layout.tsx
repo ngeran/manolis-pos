@@ -47,14 +47,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </span>
           </button>
           <span className="text-2xl md:text-3xl font-bold text-primary">Manolis</span>
-          <div className="hidden md:flex ml-6 lg:ml-10 bg-surface-container-low px-3 py-1 rounded-full items-center gap-1">
-            <span className="material-symbols-outlined text-outline text-xl">search</span>
-            <input
-              className="bg-transparent border-none focus:ring-0 text-base font-semibold w-32 lg:w-64 text-on-surface"
-              placeholder="Search menu items..."
-              type="text"
-            />
-          </div>
         </div>
         <div className="flex items-center gap-2 md:gap-6">
           <div className="flex items-center gap-1 md:gap-3">

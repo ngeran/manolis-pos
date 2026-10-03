@@ -21,9 +21,9 @@ export default function OrdersPage() {
   const nowMs = useServerClock(data?.serverTime);
 
   // Remember the last view. One-time client init keeps SSR markup deterministic.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const stored = localStorage.getItem("orders-view");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "list" || stored === "tables") setView(stored);
   }, []);
 

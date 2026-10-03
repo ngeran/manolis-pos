@@ -4,20 +4,29 @@ import { useEffect, useState } from "react";
 import { MenuGrid, MenuItemData } from "@/components/pos/MenuGrid";
 import { OrderTicket } from "@/components/pos/OrderTicket";
 import { WeightPickerModal } from "@/components/pos/WeightPickerModal";
-import { useOrderStore } from "@/lib/store";
-import { formatPrice, cn } from "@/lib/utils";
+import { QuantityStepper } from "@/components/pos/QuantityStepper";
+import { NoteModal } from "@/components/pos/NoteModal";
+import { useOrderStore, type CartItem } from "@/lib/store";
+import { formatPrice, formatWeight, cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+
+function tickHaptic() {
+  // Subtle confirmation on devices that support it (Android); silent elsewhere.
+  navigator.vibrate?.(10);
+}
 
 export default function POSPage() {
   const [items, setItems] = useState<MenuItemData[]>([]);
   const [categories, setCategories] = useState<{ id: string; nameEl: string; nameEn: string }[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [weightPickerItem, setWeightPickerItem] = useState<MenuItemData | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState<CartItem | null>(null);
   const addItem = useOrderStore((s) => s.addItem);
   const cartItems = useOrderStore((s) => s.items);
   const totalCents = useOrderStore((s) => s.totalCents);
@@ -57,6 +66,7 @@ export default function POSPage() {
         pricingType: "unit",
         quantityGrams: 1000,
       });
+      tickHaptic();
     }
   };
 
@@ -69,6 +79,7 @@ export default function POSPage() {
       pricingType: "weight",
       quantityGrams: grams,
     });
+    tickHaptic();
     setWeightPickerItem(null);
   };
 
@@ -138,6 +149,8 @@ export default function POSPage() {
           onCategoryChange={setActiveCategory}
           categories={categories}
           onAddItem={handleAddItem}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
       </div>
 
@@ -200,43 +213,96 @@ export default function POSPage() {
                 {cartItems.map((item) => (
                   <div
                     key={item.menuItemId}
-                    className="flex justify-between items-start p-3 bg-surface-container-low rounded-xl border border-outline-variant"
+                    className="p-3 bg-surface-container-low rounded-xl border border-outline-variant flex flex-col gap-2"
                   >
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-base text-on-surface truncate">
-                        {item.name}
-                        {item.hold && (
-                          <span className="text-secondary text-xs font-bold ml-2">
-                            · Αναμονή
-                          </span>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-base text-on-surface truncate">
+                          {item.name}
+                          {item.hold && (
+                            <span className="text-secondary text-xs font-bold ml-2">
+                              · Αναμονή
+                            </span>
+                          )}
+                        </h4>
+                        {item.notes && (
+                          <span className="text-xs font-medium text-tertiary">{item.notes}</span>
                         )}
-                      </h4>
-                      {item.notes && (
-                        <span className="text-xs font-medium text-tertiary">{item.notes}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 ml-3 shrink-0">
-                      <span className="font-bold text-on-surface mr-1">
+                      </div>
+                      <span className="font-bold text-on-surface shrink-0">
                         {formatPrice(Math.round((item.priceCents * item.quantityGrams) / 1000))}
                       </span>
-                      <button
-                        onClick={() =>
-                          useOrderStore.getState().updateHold(item.menuItemId, !(item.hold ?? false))
-                        }
-                        className={cn(
-                          "p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center",
-                          item.hold ? "text-secondary bg-secondary-container/40" : "text-outline"
-                        )}
-                        title={item.hold ? "Κρατάμε — δεν στέλνεται ακόμα στην κουζίνα" : "Κράτα για αργότερα (hold)"}
-                      >
-                        <span className="material-symbols-outlined text-[20px]">schedule</span>
-                      </button>
-                      <button
-                        onClick={() => useOrderStore.getState().removeItem(item.menuItemId)}
-                        className="text-error p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
-                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      {item.pricingType === "unit" ? (
+                        <QuantityStepper
+                          quantity={item.quantityGrams / 1000}
+                          onIncrement={() => {
+                            useOrderStore.getState().updateQuantityGrams(item.menuItemId, item.quantityGrams + 1000);
+                            tickHaptic();
+                          }}
+                          onDecrement={() => {
+                            useOrderStore.getState().updateQuantityGrams(item.menuItemId, item.quantityGrams - 1000);
+                            tickHaptic();
+                          }}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              useOrderStore.getState().updateQuantityGrams(item.menuItemId, item.quantityGrams - 250);
+                              tickHaptic();
+                            }}
+                            className="flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container-high min-h-[44px] min-w-[44px]"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">remove</span>
+                          </button>
+                          <span className="font-bold text-sm min-w-[56px] text-center">
+                            {formatWeight(item.quantityGrams)}
+                          </span>
+                          <button
+                            onClick={() => {
+                              useOrderStore.getState().updateQuantityGrams(item.menuItemId, item.quantityGrams + 250);
+                              tickHaptic();
+                            }}
+                            className="flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container-high min-h-[44px] min-w-[44px]"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">add</span>
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => setEditingNotes(item)}
+                          className={cn(
+                            "p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center",
+                            item.notes ? "text-tertiary" : "text-outline hover:bg-surface-container-high"
+                          )}
+                          title="Σημειώσεις"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">edit_note</span>
+                        </button>
+                        <button
+                          onClick={() =>
+                            useOrderStore.getState().updateHold(item.menuItemId, !(item.hold ?? false))
+                          }
+                          className={cn(
+                            "p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center",
+                            item.hold ? "text-secondary bg-secondary-container/40" : "text-outline"
+                          )}
+                          title={item.hold ? "Κρατάμε — δεν στέλνεται ακόμα στην κουζίνα" : "Κράτα για αργότερα (hold)"}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">schedule</span>
+                        </button>
+                        <button
+                          onClick={() => useOrderStore.getState().removeItem(item.menuItemId)}
+                          className="text-error p-1 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -278,6 +344,18 @@ export default function POSPage() {
           item={weightPickerItem}
           onConfirm={handleWeightConfirm}
           onCancel={() => setWeightPickerItem(null)}
+        />
+      )}
+
+      {editingNotes && (
+        <NoteModal
+          itemName={editingNotes.name}
+          initialNotes={editingNotes.notes ?? ""}
+          onConfirm={(notes) => {
+            useOrderStore.getState().updateNotes(editingNotes.menuItemId, notes);
+            setEditingNotes(null);
+          }}
+          onCancel={() => setEditingNotes(null)}
         />
       )}
 
