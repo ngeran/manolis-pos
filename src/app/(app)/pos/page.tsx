@@ -163,7 +163,7 @@ export default function POSPage() {
             !editOrderId ? (
               <button
                 onClick={() => setPickerOpen(true)}
-                className="w-full flex items-center justify-between bg-surface-container-low border border-outline-variant rounded-full px-4 py-2 min-h-[44px] hover:border-primary-container transition-colors"
+                className="w-full sm:w-72 shrink-0 flex items-center justify-between bg-surface-container-low border border-outline-variant rounded-full px-4 py-2 min-h-[44px] hover:border-primary-container transition-colors"
               >
                 <span className="flex items-center gap-2 text-sm font-bold text-on-surface min-w-0">
                   <span className="material-symbols-outlined text-[18px] text-primary shrink-0">

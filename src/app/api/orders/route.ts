@@ -79,19 +79,25 @@ export async function GET(request: Request) {
     .orderBy(desc(orders.priority), desc(orders.sentAt))
     .limit(scope === "closed" ? 500 : 1000);
 
-  // Per-order item aggregates + per-station progress for the board.
+  // Per-order item aggregates + per-station progress + items for the cards.
   const ids = rows.map((r) => r.id);
   const itemRows = ids.length
     ? await db
         .select({
           orderId: orderItems.orderId,
+          nameEl: orderItems.nameEl,
+          quantityGrams: orderItems.quantityGrams,
+          pricingType: orderItems.pricingType,
+          priceAtTimeCents: orderItems.priceAtTimeCents,
           status: orderItems.status,
+          round: orderItems.round,
           stationSlug: stations.slug,
           stationNameEl: stations.nameEl,
         })
         .from(orderItems)
         .leftJoin(stations, eq(orderItems.stationId, stations.id))
         .where(inArray(orderItems.orderId, ids))
+        .orderBy(orderItems.round, orderItems.sentAt)
     : [];
 
   const agg = new Map<string, { itemCount: number; doneCount: number; heldCount: number; voidedCount: number; stations: Map<string, { slug: string | null; nameEl: string | null; openCount: number; doneCount: number }> }>();
@@ -131,6 +137,13 @@ export async function GET(request: Request) {
     tablesByOrder.set(t.orderId, list);
   }
 
+  const itemsByOrder = new Map<string, typeof itemRows>();
+  for (const it of itemRows) {
+    const list = itemsByOrder.get(it.orderId) ?? [];
+    list.push(it);
+    itemsByOrder.set(it.orderId, list);
+  }
+
   const result = rows.map((r) => {
     const a = agg.get(r.id);
     return {
@@ -143,6 +156,7 @@ export async function GET(request: Request) {
       heldCount: a?.heldCount ?? 0,
       voidedCount: a?.voidedCount ?? 0,
       stations: a ? [...a.stations.values()].filter((s) => s.slug) : [],
+      items: itemsByOrder.get(r.id) ?? [],
     };
   });
 

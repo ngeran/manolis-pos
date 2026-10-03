@@ -69,6 +69,18 @@ export interface BoardOrderStation {
   doneCount: number;
 }
 
+export interface BoardOrderItem {
+  orderId: string;
+  nameEl: string;
+  quantityGrams: number;
+  pricingType: string;
+  priceAtTimeCents: number;
+  status: "held" | "queued" | "done" | "voided";
+  round: number;
+  stationSlug: string | null;
+  stationNameEl: string | null;
+}
+
 export interface BoardOrder {
   id: string;
   tableNumber: string | null;
@@ -97,6 +109,7 @@ export interface BoardOrder {
   heldCount: number;
   voidedCount: number;
   stations: BoardOrderStation[];
+  items: BoardOrderItem[];
 }
 
 export interface OrdersPayload {
