@@ -6,6 +6,7 @@ import {
   orderItems,
   orderTables,
   orders,
+  reservations,
   stations,
   users,
 } from "@/lib/db/schema";
@@ -57,6 +58,7 @@ export async function GET(request: Request) {
       id: orders.id,
       tableNumber: orders.tableNumber,
       guests: orders.guests,
+      guestName: orders.guestName,
       status: orders.status,
       priority: orders.priority,
       totalCents: orders.totalCents,
@@ -175,14 +177,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { tableNumber, guests, tableIds, orderId, items } = parsed.data;
+  const { tableNumber, guests, guestName, reservationId, tableIds, orderId, items } = parsed.data;
+
+  // Seating a reservation: pre-fill table/party/name from it and mark it seated
+  // once the order is created.
+  let reservation: typeof reservations.$inferSelect | null = null;
+  if (reservationId) {
+    const [r] = await db.select().from(reservations).where(eq(reservations.id, reservationId));
+    if (!r) {
+      return NextResponse.json({ error: "Reservation not found" }, { status: 400 });
+    }
+    if (r.status !== "reserved") {
+      return NextResponse.json({ error: "Reservation is not active" }, { status: 409 });
+    }
+    reservation = r;
+  }
+
+  const effectiveTableIds =
+    tableIds && tableIds.length > 0
+      ? tableIds
+      : reservation?.tableId
+        ? [reservation.tableId]
+        : undefined;
+  const effectiveGuests = guests ?? reservation?.guests ?? undefined;
+  const effectiveGuestName = guestName ?? reservation?.name ?? undefined;
 
   // Resolve the occupied dining tables; the display label is derived from
   // them ("12+4") so combined tables stay consistent everywhere.
   let tableLabel = tableNumber || null;
   let resolvedTableIds: string[] = [];
-  if (tableIds && tableIds.length > 0) {
-    const uniqueIds = [...new Set(tableIds)];
+  if (effectiveTableIds && effectiveTableIds.length > 0) {
+    const uniqueIds = [...new Set(effectiveTableIds)];
     const rows = await db
       .select({ id: diningTables.id, name: diningTables.name, sortOrder: diningTables.sortOrder })
       .from(diningTables)
@@ -264,6 +289,7 @@ export async function POST(request: Request) {
         if (tableIds && tableIds.length > 0) orderUpdates.tableNumber = tableLabel;
         else if (tableNumber) orderUpdates.tableNumber = tableNumber;
         if (guests !== undefined) orderUpdates.guests = guests;
+        if (effectiveGuestName !== undefined) orderUpdates.guestName = effectiveGuestName;
         if (Object.keys(orderUpdates).length > 0) {
           await tx.update(orders).set(orderUpdates).where(eq(orders.id, orderId));
         }
@@ -298,7 +324,8 @@ export async function POST(request: Request) {
         .values({
           userId: user.id,
           tableNumber: tableLabel,
-          guests: guests ?? null,
+          guests: effectiveGuests ?? null,
+          guestName: effectiveGuestName ?? null,
           totalCents,
           businessDate,
           dailyNumber,
@@ -311,6 +338,18 @@ export async function POST(request: Request) {
         await tx
           .insert(orderTables)
           .values(resolvedTableIds.map((tid) => ({ orderId: order.id, tableId: tid })));
+      }
+
+      if (reservation) {
+        const seated = await tx
+          .update(reservations)
+          .set({ status: "seated", orderId: order.id })
+          .where(and(eq(reservations.id, reservation.id), eq(reservations.status, "reserved")))
+          .returning();
+        if (seated.length === 0) {
+          // Two staff seated the same reservation at once — roll everything back.
+          throw new OrderError(409, "Reservation is not active");
+        }
       }
 
       await tx.insert(orderItems).values(

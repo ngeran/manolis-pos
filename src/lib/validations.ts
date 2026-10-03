@@ -28,9 +28,33 @@ export const createOrderSchema = z.object({
   // When present, the server derives the table label from these.
   tableIds: z.array(z.string().uuid()).optional(),
   guests: z.number().int().min(1).max(30).optional(),
+  guestName: z.string().max(80).optional(),
+  // Seating a reservation: links the new order to it and marks it seated.
+  reservationId: z.string().uuid().optional(),
   // When present, the items are appended to that live order instead of creating one.
   orderId: z.string().uuid().optional(),
   items: z.array(orderItemInputSchema).min(1),
+});
+
+export const createReservationSchema = z.object({
+  businessDate: z.string().optional(),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  name: z.string().min(1).max(80),
+  guests: z.number().int().min(1).max(30),
+  phone: z.string().max(40).optional(),
+  notes: z.string().max(300).optional(),
+  tableId: z.string().uuid().optional(),
+});
+
+export const updateReservationSchema = z.object({
+  id: z.string().uuid(),
+  time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  name: z.string().min(1).max(80).optional(),
+  guests: z.number().int().min(1).max(30).optional(),
+  phone: z.string().max(40).optional().nullable(),
+  notes: z.string().max(300).optional().nullable(),
+  tableId: z.string().uuid().optional().nullable(),
+  status: z.enum(["reserved", "cancelled"]).optional(),
 });
 
 export const orderActionSchema = z.discriminatedUnion("action", [

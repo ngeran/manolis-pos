@@ -164,6 +164,7 @@ export default function OrderDetailPage({
           </h1>
           <span className="text-lg font-semibold text-on-surface">
             {order.tableNumber ? `Τραπέζι ${order.tableNumber}` : "Takeaway"}
+            {order.guestName && ` · ${order.guestName}`}
             {guestsLabel(order.guests) && (
               <span className="text-outline font-semibold">
                 {" "}

@@ -114,6 +114,7 @@ export async function loadOrderDetail(orderId: string) {
       id: orders.id,
       tableNumber: orders.tableNumber,
       guests: orders.guests,
+      guestName: orders.guestName,
       status: orders.status,
       priority: orders.priority,
       totalCents: orders.totalCents,

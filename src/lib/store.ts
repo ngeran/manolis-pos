@@ -23,12 +23,18 @@ interface OrderState {
   tables: SelectedTable[];
   /** Party size (άτομα), optional. */
   guests: number | null;
+  /** Guest / reservation name, optional. */
+  guestName: string | null;
+  /** Reservation being seated (links the sent order back to it). */
+  reservationId: string | null;
   items: CartItem[];
   /** When set, submitting appends a new round to that live order. */
   editOrderId: string | null;
   editOrderLabel: string | null;
   setTableSelection: (tables: SelectedTable[]) => void;
   setGuests: (guests: number | null) => void;
+  setGuestName: (name: string | null) => void;
+  setReservationId: (id: string | null) => void;
   addItem: (item: Omit<CartItem, "quantityGrams"> & { quantityGrams: number }) => void;
   removeItem: (menuItemId: string) => void;
   updateQuantityGrams: (menuItemId: string, grams: number) => void;
@@ -50,6 +56,8 @@ export const useOrderStore = create<OrderState>()(
     (set, get) => ({
       tables: [],
       guests: null,
+      guestName: null,
+      reservationId: null,
       items: [],
       editOrderId: null,
       editOrderLabel: null,
@@ -57,6 +65,10 @@ export const useOrderStore = create<OrderState>()(
       setTableSelection: (tables) => set({ tables }),
 
       setGuests: (guests) => set({ guests }),
+
+      setGuestName: (guestName) => set({ guestName }),
+
+      setReservationId: (reservationId) => set({ reservationId }),
 
       addItem: (item) =>
         set((state) => {
@@ -105,7 +117,15 @@ export const useOrderStore = create<OrderState>()(
         })),
 
       clearCart: () =>
-        set({ items: [], tables: [], guests: null, editOrderId: null, editOrderLabel: null }),
+        set({
+          items: [],
+          tables: [],
+          guests: null,
+          guestName: null,
+          reservationId: null,
+          editOrderId: null,
+          editOrderLabel: null,
+        }),
 
       startEditOrder: (orderId, label) =>
         set({ editOrderId: orderId, editOrderLabel: label }),
@@ -126,7 +146,7 @@ export const useOrderStore = create<OrderState>()(
     }),
     {
       name: "manolis-cart",
-      version: 4,
+      version: 5,
       migrate: (persisted) => {
         const state = persisted as Partial<OrderState> | undefined;
         return {
@@ -134,6 +154,8 @@ export const useOrderStore = create<OrderState>()(
           items: (state?.items ?? []).map((i) => ({ ...i, hold: i.hold ?? false })),
           tables: Array.isArray(state?.tables) ? state.tables : [],
           guests: state?.guests ?? null,
+          guestName: state?.guestName ?? null,
+          reservationId: state?.reservationId ?? null,
           editOrderId: null,
           editOrderLabel: null,
         } as OrderState;

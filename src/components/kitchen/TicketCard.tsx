@@ -49,6 +49,7 @@ export function TicketCard({
           </span>
           <span className="text-sm font-semibold text-outline truncate">
             {ticket.tableNumber ? `Τραπέζι ${ticket.tableNumber}` : "Takeaway"}
+            {ticket.guestName && ` · ${ticket.guestName}`}
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">

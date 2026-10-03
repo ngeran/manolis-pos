@@ -478,6 +478,7 @@ function OrderCard({
             )}
           </p>
           <p className="text-xs text-outline truncate">
+            {order.guestName ? `${order.guestName} · ` : ""}
             {order.tableNumber ? "Τραπέζι" : "Takeaway"}
             {order.priority && (
               <span className="text-error font-bold"> · ΠΡΟΤΕΡΑΙΟΤΗΤΑ</span>

@@ -18,6 +18,7 @@ interface TablePickerModalProps {
 export function TablePickerModal({ onClose }: TablePickerModalProps) {
   const setTableSelection = useOrderStore((s) => s.setTableSelection);
   const setGuests = useOrderStore((s) => s.setGuests);
+  const setGuestName = useOrderStore((s) => s.setGuestName);
 
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [active, setActive] = useState<BoardOrder[]>([]);
@@ -26,6 +27,9 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
   );
   const [pendingGuests, setPendingGuests] = useState<number | null>(
     () => useOrderStore.getState().guests
+  );
+  const [pendingName, setPendingName] = useState(
+    () => useOrderStore.getState().guestName ?? ""
   );
 
   useEffect(() => {
@@ -66,6 +70,7 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
   const apply = () => {
     setTableSelection(pending);
     setGuests(pending.length ? pendingGuests : null);
+    setGuestName(pendingName.trim() || null);
     onClose();
   };
 
@@ -189,6 +194,22 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
                   <span className="material-symbols-outlined text-[18px]">add</span>
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Guest / reservation name */}
+          {pending.length > 0 && (
+            <div>
+              <label className="block text-sm font-semibold text-on-surface mb-1">
+                Όνομα (προαιρετικό)
+              </label>
+              <input
+                type="text"
+                value={pendingName}
+                onChange={(e) => setPendingName(e.target.value)}
+                placeholder="π.χ. Γιώργος — για κρατήσεις"
+                className="w-full border border-outline-variant rounded-lg px-3 py-2.5 text-base min-h-[44px] bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              />
             </div>
           )}
         </div>

@@ -35,6 +35,8 @@ export default function POSPage() {
   const totalCents = useOrderStore((s) => s.totalCents);
   const tables = useOrderStore((s) => s.tables);
   const guests = useOrderStore((s) => s.guests);
+  const guestName = useOrderStore((s) => s.guestName);
+  const reservationId = useOrderStore((s) => s.reservationId);
   const clearCart = useOrderStore((s) => s.clearCart);
   const editOrderId = useOrderStore((s) => s.editOrderId);
   const editOrderLabel = useOrderStore((s) => s.editOrderLabel);
@@ -100,6 +102,8 @@ export default function POSPage() {
           tableNumber: tables.length ? tableSelectionLabel(tables) : undefined,
           tableIds: tables.length ? tables.map((t) => t.id) : undefined,
           guests: guests ?? undefined,
+          guestName: guestName || undefined,
+          reservationId: !editOrderId ? reservationId || undefined : undefined,
           orderId: editOrderId || undefined,
           items: cartItems.map((i) => ({
             menuItemId: i.menuItemId,
@@ -171,6 +175,7 @@ export default function POSPage() {
                   </span>
                   <span className="truncate">
                     {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
+                    {guestName && <span> · {guestName}</span>}
                     {guestsLabel(guests) && (
                       <span className="text-outline font-semibold">
                         {" "}
@@ -358,6 +363,7 @@ export default function POSPage() {
                       </span>
                       <span className="truncate">
                         {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
+                        {guestName && <span> · {guestName}</span>}
                         {guestsLabel(guests) && (
                           <span> · {guestsLabel(guests)}</span>
                         )}

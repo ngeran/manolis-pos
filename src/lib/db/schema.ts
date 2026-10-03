@@ -33,10 +33,16 @@ export const voidReasonEnum = pgEnum("void_reason", [
   "kitchen_error",
   "other",
 ]);
+export const reservationStatusEnum = pgEnum("reservation_status", [
+  "reserved",
+  "seated",
+  "cancelled",
+]);
 
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 export type OrderItemStatus = (typeof orderItemStatusEnum.enumValues)[number];
 export type VoidReason = (typeof voidReasonEnum.enumValues)[number];
+export type ReservationStatus = (typeof reservationStatusEnum.enumValues)[number];
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -86,6 +92,24 @@ export const orderTables = pgTable(
   ]
 );
 
+export const reservations = pgTable(
+  "reservations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    businessDate: date("business_date").notNull(),
+    time: text("time").notNull(),
+    name: text("name").notNull(),
+    guests: integer("guests").notNull(),
+    phone: text("phone"),
+    notes: text("notes"),
+    tableId: uuid("table_id").references(() => diningTables.id),
+    status: reservationStatusEnum("status").notNull().default("reserved"),
+    orderId: uuid("order_id").references(() => orders.id),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("reservations_business_date_idx").on(t.businessDate)]
+);
+
 export const menuItems = pgTable(
   "menu_items",
   {
@@ -122,6 +146,8 @@ export const orders = pgTable(
       .references(() => users.id),
     tableNumber: text("table_number"),
     guests: integer("guests"),
+    /** Guest / reservation name, e.g. the person the table is booked under. */
+    guestName: text("guest_name"),
     status: orderStatusEnum("status").notNull().default("sent"),
     totalCents: integer("total_cents").notNull(),
     businessDate: date("business_date").notNull(),

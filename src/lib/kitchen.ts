@@ -87,6 +87,7 @@ export interface BoardOrder {
   /** Names of the dining tables this order occupies (combined tables → several). */
   tableNames: string[];
   guests: number | null;
+  guestName: string | null;
   status: OrderStatus;
   priority: boolean;
   totalCents: number;
@@ -115,6 +116,22 @@ export interface BoardOrder {
 export interface OrdersPayload {
   serverTime: string;
   orders: BoardOrder[];
+}
+
+// ── /api/reservations payload ──
+
+export interface ReservationRow {
+  id: string;
+  businessDate: string;
+  time: string;
+  name: string;
+  guests: number;
+  phone: string | null;
+  notes: string | null;
+  status: "reserved" | "seated" | "cancelled";
+  orderId: string | null;
+  tableId: string | null;
+  tableName: string | null;
 }
 
 // ── /api/tables payload ──
@@ -156,6 +173,7 @@ export interface OrderDetailPayload {
   tableNumber: string | null;
   tableNames: string[];
   guests: number | null;
+  guestName: string | null;
   status: OrderStatus;
   priority: boolean;
   totalCents: number;
@@ -199,6 +217,7 @@ export interface KitchenTicket {
   orderId: string;
   dailyNumber: number;
   tableNumber: string | null;
+  guestName: string | null;
   status: OrderStatus;
   priority: boolean;
   sentAt: string;

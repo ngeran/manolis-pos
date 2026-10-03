@@ -29,6 +29,7 @@ async function migrate() {
   await db.execute(sql`DO $$ BEGIN CREATE TYPE order_status AS ENUM ('sent','preparing','ready','served','paid','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
   await db.execute(sql`DO $$ BEGIN CREATE TYPE order_item_status AS ENUM ('held','queued','done','voided'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
   await db.execute(sql`DO $$ BEGIN CREATE TYPE void_reason AS ENUM ('wrong_item','unavailable_86','customer_changed_mind','kitchen_error','other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+  await db.execute(sql`DO $$ BEGIN CREATE TYPE reservation_status AS ENUM ('reserved','seated','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
 
   // ── 2. Stations + counters ──
   await db.execute(sql`CREATE TABLE IF NOT EXISTS stations (
@@ -121,6 +122,23 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_by uuid REFERENCES users(id)`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_reason void_reason`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_note text`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_name text`);
+
+  // ── Reservations (phone bookings; seated when the party arrives) ──
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS reservations (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    business_date date NOT NULL,
+    time text NOT NULL,
+    name text NOT NULL,
+    guests integer NOT NULL,
+    phone text,
+    notes text,
+    table_id uuid REFERENCES dining_tables(id),
+    status reservation_status NOT NULL DEFAULT 'reserved',
+    order_id uuid REFERENCES orders(id),
+    created_at timestamp NOT NULL DEFAULT now()
+  )`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS reservations_business_date_idx ON reservations (business_date)`);
 
   // ── 5. Legacy text status → enum ──
   await db.execute(sql`ALTER TABLE orders ALTER COLUMN status DROP DEFAULT`);
