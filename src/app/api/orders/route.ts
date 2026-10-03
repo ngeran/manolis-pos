@@ -9,7 +9,7 @@ import {
   stations,
   users,
 } from "@/lib/db/schema";
-import { and, desc, eq, gte, inArray, max, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, max, or } from "drizzle-orm";
 import { createOrderSchema } from "@/lib/validations";
 import { getSessionUser, unauthorized } from "@/lib/api-auth";
 import {
@@ -33,8 +33,9 @@ export async function GET(request: Request) {
 
   const params = new URL(request.url).searchParams;
   const scope = params.get("scope") ?? "all";
-  // Optional lookback window for history (Athens business date, inclusive).
+  // Optional lookback window for history (Athens business dates, inclusive).
   const from = params.get("from");
+  const to = params.get("to");
 
   let where;
   if (scope === "active") {
@@ -46,7 +47,8 @@ export async function GET(request: Request) {
   } else if (scope === "closed") {
     where = and(
       inArray(orders.status, ["paid", "cancelled"]),
-      from ? gte(orders.businessDate, from) : undefined
+      from ? gte(orders.businessDate, from) : undefined,
+      to ? lte(orders.businessDate, to) : undefined
     );
   }
 

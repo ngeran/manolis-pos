@@ -42,7 +42,6 @@ export default function KitchenPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of persisted settings
     setStationSlug(fromUrl ?? localStorage.getItem("kitchen-station") ?? "all");
     const storedSound = localStorage.getItem("kitchen-sound");
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore of persisted settings
     if (storedSound !== null) setSoundEnabled(storedSound === "1");
   }, []);
 

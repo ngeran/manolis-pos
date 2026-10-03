@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePolling } from "@/hooks/usePolling";
 import { useServerClock } from "@/hooks/useServerClock";
 import { StatusChip } from "@/components/service/StatusChip";
@@ -44,12 +45,20 @@ export default function OrdersPage() {
   const [tab, setTab] = useState<"active" | "closed">("active");
   const [view, setView] = useState<"list" | "tables">("list");
   const [range, setRange] = useState<HistoryRange>("week");
+  const [day, setDay] = useState("");
+  const [tableMode, setTableMode] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [paying, setPaying] = useState<BoardOrder | null>(null);
-  const fromParam = tab === "closed" && range !== "all" ? `&from=${RANGE_FROM[range]}` : "";
+  // A specific picked day overrides the range chips.
+  const window =
+    tab === "closed" && day
+      ? `&from=${day}&to=${day}`
+      : tab === "closed" && range !== "all"
+        ? `&from=${RANGE_FROM[range]}`
+        : "";
   const { data, isStale, refresh } = usePolling<OrdersPayload>(
-    `/api/orders?scope=${tab}${fromParam}`,
+    `/api/orders?scope=${tab}${window}`,
     { intervalMs: POLL_MS }
   );
   const nowMs = useServerClock(data?.serverTime);
@@ -210,27 +219,65 @@ export default function OrdersPage() {
           </div>
         )}
         {tab === "closed" && (
-          <div className="flex bg-surface-container-low rounded-full p-1">
-            {([
-              ["today", "Σήμερα"],
-              ["week", "7 μέρες"],
-              ["month", "Μήνας"],
-              ["all", "Όλα"],
-            ] as const).map(([value, label]) => (
+          <>
+            <div className="flex bg-surface-container-low rounded-full p-1">
               <button
-                key={value}
-                onClick={() => setRange(value)}
+                onClick={() => setTableMode(false)}
                 className={cn(
-                  "px-4 py-2 rounded-full font-bold text-sm min-h-[40px]",
-                  range === value
+                  "px-4 py-2 rounded-full font-bold text-sm min-h-[40px] flex items-center gap-1.5",
+                  !tableMode
                     ? "bg-primary text-on-primary"
                     : "text-on-surface hover:bg-surface-container-high"
                 )}
               >
-                {label}
+                <span className="material-symbols-outlined text-[18px]">grid_view</span>
+                Κάρτες
               </button>
-            ))}
-          </div>
+              <button
+                onClick={() => setTableMode(true)}
+                className={cn(
+                  "px-4 py-2 rounded-full font-bold text-sm min-h-[40px] flex items-center gap-1.5",
+                  tableMode
+                    ? "bg-primary text-on-primary"
+                    : "text-on-surface hover:bg-surface-container-high"
+                )}
+              >
+                <span className="material-symbols-outlined text-[18px]">table_rows</span>
+                Πίνακας
+              </button>
+            </div>
+            <div className="flex bg-surface-container-low rounded-full p-1">
+              {([
+                ["today", "Σήμερα"],
+                ["week", "7 μέρες"],
+                ["month", "Μήνας"],
+                ["all", "Όλα"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setRange(value);
+                    setDay("");
+                  }}
+                  className={cn(
+                    "px-4 py-2 rounded-full font-bold text-sm min-h-[40px]",
+                    !day && range === value
+                      ? "bg-primary text-on-primary"
+                      : "text-on-surface hover:bg-surface-container-high"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <input
+              type="date"
+              value={day}
+              onChange={(e) => setDay(e.target.value)}
+              className="bg-surface border border-outline-variant rounded-full px-4 py-2 text-sm min-h-[44px] text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              title="Συγκεκριμένη ημέρα"
+            />
+          </>
         )}
         <div className="relative flex-1 min-w-[180px] max-w-md">
           <span className="material-symbols-outlined text-outline absolute left-3 top-1/2 -translate-y-1/2 text-[20px] pointer-events-none">
@@ -248,6 +295,8 @@ export default function OrdersPage() {
 
       {tableView ? (
         <TableView orders={orders} nowMs={nowMs} />
+      ) : tab === "closed" && tableMode ? (
+        <OrdersTable orders={orders} />
       ) : orders.length === 0 ? (
         <div className="text-center py-10 text-outline">
           <span className="material-symbols-outlined text-[64px] block mb-3">
@@ -314,6 +363,65 @@ export default function OrdersPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Dense per-day register — click a row for the full order. */
+function OrdersTable({ orders }: { orders: BoardOrder[] }) {
+  const router = useRouter();
+  return (
+    <div className="bg-surface rounded-xl border border-outline-variant overflow-x-auto">
+      <table className="w-full text-sm min-w-[760px]">
+        <thead>
+          <tr className="bg-surface-container-low text-left text-xs font-semibold text-outline">
+            <th className="p-3">#</th>
+            <th className="p-3">Ημερομηνία</th>
+            <th className="p-3">Ώρα</th>
+            <th className="p-3">Τραπέζι</th>
+            <th className="p-3">Άτομα</th>
+            <th className="p-3">Είδη</th>
+            <th className="p-3 text-right">Σύνολο</th>
+            <th className="p-3">Κατάσταση</th>
+            <th className="p-3">Σημειώσεις</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr
+              key={o.id}
+              onClick={() => router.push(`/orders/${o.id}`)}
+              className="border-t border-outline-variant hover:bg-surface-container-low cursor-pointer"
+            >
+              <td className="p-3 font-bold text-on-surface">{o.dailyNumber}</td>
+              <td className="p-3 text-outline">{o.businessDate}</td>
+              <td className="p-3 text-outline">{timeEl(o.sentAt)}</td>
+              <td className="p-3 font-semibold text-on-surface">
+                {o.tableNumber ?? "Takeaway"}
+              </td>
+              <td className="p-3 text-outline">{guestsLabel(o.guests) || "—"}</td>
+              <td className="p-3 text-outline">{o.itemCount}</td>
+              <td className="p-3 text-right font-bold text-on-surface">
+                {formatPrice(o.totalCents)}
+              </td>
+              <td className="p-3">
+                <StatusChip status={o.status} />
+              </td>
+              <td className="p-3 text-xs text-outline">
+                {o.cancelReason ? `Ακύρωση: ${voidReasonMeta[o.cancelReason]}` : ""}
+                {o.refundReason ? `Επιστροφή: ${voidReasonMeta[o.refundReason]}` : ""}
+              </td>
+            </tr>
+          ))}
+          {orders.length === 0 && (
+            <tr>
+              <td colSpan={9} className="p-6 text-center text-outline">
+                Κανένα ιστορικό για την επιλεγμένη περίοδο.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
