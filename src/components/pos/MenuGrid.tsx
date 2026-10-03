@@ -49,9 +49,9 @@ export function MenuGrid({
       : items;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 min-w-0">
       {/* Sticky search + category chips */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-1 pb-2 shadow-sm flex flex-col gap-2">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-1 pb-2 shadow-sm flex flex-col gap-2 min-w-0">
         <div className="relative">
           <span className="material-symbols-outlined text-outline absolute left-3 top-1/2 -translate-y-1/2 text-[20px] pointer-events-none">
             search

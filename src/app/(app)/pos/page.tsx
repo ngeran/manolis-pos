@@ -141,8 +141,10 @@ export default function POSPage() {
         </div>
       )}
 
-      {/* Menu area: full width on mobile, flexible on desktop */}
-      <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
+      {/* Menu area: full width on mobile, flexible on desktop.
+          min-w-0 lets the panel shrink below the chips row's intrinsic
+          width — without it the grid overflows horizontally on phones. */}
+      <div className="flex-1 min-w-0 p-4 lg:p-6 overflow-y-auto">
         <MenuGrid
           items={items}
           activeCategory={activeCategory}

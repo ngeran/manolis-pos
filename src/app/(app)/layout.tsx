@@ -117,7 +117,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         <main
           className={cn(
-            "flex-grow flex bg-background h-full transition-[margin] duration-300 ease-in-out",
+            // min-w-0: without it main's automatic min size tracks the widest
+            // intrinsic content (e.g. the POS category chips row) and the whole
+            // panel overflows horizontally on phones.
+            "flex-grow flex bg-background h-full transition-[margin] duration-300 ease-in-out min-w-0",
             sidebarOpen && "lg:ml-[280px]"
           )}
         >
