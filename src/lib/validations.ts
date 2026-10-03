@@ -24,6 +24,7 @@ export const orderItemInputSchema = z.object({
 
 export const createOrderSchema = z.object({
   tableNumber: z.string().optional(),
+  guests: z.number().int().min(1).max(30).optional(),
   // When present, the items are appended to that live order instead of creating one.
   orderId: z.string().uuid().optional(),
   items: z.array(orderItemInputSchema).min(1),

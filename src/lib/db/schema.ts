@@ -102,6 +102,7 @@ export const orders = pgTable(
       .notNull()
       .references(() => users.id),
     tableNumber: text("table_number"),
+    guests: integer("guests"),
     status: orderStatusEnum("status").notNull().default("sent"),
     totalCents: integer("total_cents").notNull(),
     businessDate: date("business_date").notNull(),

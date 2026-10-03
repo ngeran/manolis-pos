@@ -32,6 +32,12 @@ export function roundLabel(round: number): string {
   return `R${round}`;
 }
 
+/** "5 άτομα" / "1 άτομο" — party-size label, empty when unset. */
+export function guestsLabel(guests: number | null | undefined): string {
+  if (!guests || guests < 1) return "";
+  return guests === 1 ? "1 άτομο" : `${guests} άτομα`;
+}
+
 export const orderStatusMeta: Record<OrderStatus, { el: string; en: string }> = {
   sent: { el: "Στάλθηκε", en: "Sent" },
   preparing: { el: "Σε εξέλιξη", en: "Preparing" },
@@ -61,6 +67,7 @@ export interface BoardOrderStation {
 export interface BoardOrder {
   id: string;
   tableNumber: string | null;
+  guests: number | null;
   status: OrderStatus;
   priority: boolean;
   totalCents: number;
@@ -123,6 +130,7 @@ export interface OrderDetailItem {
 export interface OrderDetailPayload {
   id: string;
   tableNumber: string | null;
+  guests: number | null;
   status: OrderStatus;
   priority: boolean;
   totalCents: number;

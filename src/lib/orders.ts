@@ -110,6 +110,7 @@ export async function loadOrderDetail(orderId: string) {
     .select({
       id: orders.id,
       tableNumber: orders.tableNumber,
+      guests: orders.guests,
       status: orders.status,
       priority: orders.priority,
       totalCents: orders.totalCents,

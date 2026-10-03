@@ -6,8 +6,10 @@ import { OrderTicket } from "@/components/pos/OrderTicket";
 import { WeightPickerModal } from "@/components/pos/WeightPickerModal";
 import { QuantityStepper } from "@/components/pos/QuantityStepper";
 import { NoteModal } from "@/components/pos/NoteModal";
+import { TablePickerModal } from "@/components/pos/TablePickerModal";
 import { useOrderStore, type CartItem } from "@/lib/store";
 import { formatPrice, formatWeight, cn } from "@/lib/utils";
+import { guestsLabel } from "@/lib/kitchen";
 import { useRouter } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +29,12 @@ export default function POSPage() {
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<CartItem | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const addItem = useOrderStore((s) => s.addItem);
   const cartItems = useOrderStore((s) => s.items);
   const totalCents = useOrderStore((s) => s.totalCents);
   const tableNumber = useOrderStore((s) => s.tableNumber);
+  const guests = useOrderStore((s) => s.guests);
   const clearCart = useOrderStore((s) => s.clearCart);
   const editOrderId = useOrderStore((s) => s.editOrderId);
   const editOrderLabel = useOrderStore((s) => s.editOrderLabel);
@@ -94,6 +98,7 @@ export default function POSPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tableNumber: tableNumber || undefined,
+          guests: guests ?? undefined,
           orderId: editOrderId || undefined,
           items: cartItems.map((i) => ({
             menuItemId: i.menuItemId,
@@ -153,12 +158,41 @@ export default function POSPage() {
           onAddItem={handleAddItem}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          headerSlot={
+            !editOrderId ? (
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="w-full flex items-center justify-between bg-surface-container-low border border-outline-variant rounded-full px-4 py-2 min-h-[44px] hover:border-primary-container transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-bold text-on-surface min-w-0">
+                  <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
+                    {tableNumber ? "table_restaurant" : "takeout_dining"}
+                  </span>
+                  <span className="truncate">
+                    {tableNumber ? `Τραπέζι ${tableNumber}` : "Takeaway"}
+                    {guestsLabel(guests) && (
+                      <span className="text-outline font-semibold">
+                        {" "}
+                        · {guestsLabel(guests)}
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="text-xs font-bold text-primary shrink-0">Αλλαγή</span>
+              </button>
+            ) : null
+          }
         />
       </div>
 
       {/* Tablet/desktop: sidebar order ticket */}
       <div className="hidden md:flex">
-        <OrderTicket onSubmit={handleSubmit} submitting={submitting} appendMode={!!editOrderId} />
+        <OrderTicket
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          appendMode={!!editOrderId}
+          onOpenPicker={editOrderId ? undefined : () => setPickerOpen(true)}
+        />
       </div>
 
       {/* Phone: floating cart button + bottom drawer */}
@@ -312,6 +346,25 @@ export default function POSPage() {
 
               {/* Summary + submit */}
               <div className="p-4 border-t border-outline-variant bg-surface">
+                {!editOrderId && (
+                  <button
+                    onClick={() => setPickerOpen(true)}
+                    className="w-full flex items-center justify-between min-h-[40px] mb-2"
+                  >
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-outline min-w-0">
+                      <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
+                        {tableNumber ? "table_restaurant" : "takeout_dining"}
+                      </span>
+                      <span className="truncate">
+                        {tableNumber ? `Τραπέζι ${tableNumber}` : "Takeaway"}
+                        {guestsLabel(guests) && (
+                          <span> · {guestsLabel(guests)}</span>
+                        )}
+                      </span>
+                    </span>
+                    <span className="text-xs font-bold text-primary shrink-0">Αλλαγή</span>
+                  </button>
+                )}
                 <div className="flex justify-between text-2xl font-bold text-on-surface mb-4">
                   <span>Total</span>
                   <span className="text-primary">{formatPrice(totalCents())}</span>
@@ -360,6 +413,8 @@ export default function POSPage() {
           onCancel={() => setEditingNotes(null)}
         />
       )}
+
+      {pickerOpen && <TablePickerModal onClose={() => setPickerOpen(false)} />}
 
       {submitError && (
         <div

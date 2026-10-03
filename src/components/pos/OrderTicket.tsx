@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useOrderStore, type CartItem } from "@/lib/store";
 import { formatPrice, formatWeight, calculateLineTotal, cn } from "@/lib/utils";
+import { guestsLabel } from "@/lib/kitchen";
 import { QuantityStepper } from "./QuantityStepper";
 import { NoteModal } from "./NoteModal";
 import { Button } from "@/components/ui/Button";
@@ -12,9 +13,11 @@ interface OrderTicketProps {
   submitting?: boolean;
   /** True while appending a round to an existing live order. */
   appendMode?: boolean;
+  /** Opens the table/party picker (omitted in append mode). */
+  onOpenPicker?: () => void;
 }
 
-export function OrderTicket({ onSubmit, submitting, appendMode }: OrderTicketProps) {
+export function OrderTicket({ onSubmit, submitting, appendMode, onOpenPicker }: OrderTicketProps) {
   const {
     items,
     removeItem,
@@ -26,6 +29,8 @@ export function OrderTicket({ onSubmit, submitting, appendMode }: OrderTicketPro
     taxCents,
     totalCents,
     itemCount,
+    tableNumber,
+    guests,
   } = useOrderStore();
   const [editingNotesFor, setEditingNotesFor] = useState<CartItem | null>(null);
 
@@ -57,6 +62,24 @@ export function OrderTicket({ onSubmit, submitting, appendMode }: OrderTicketPro
           {itemCount()} Items
         </span>
       </div>
+
+      {onOpenPicker && !appendMode && (
+        <button
+          onClick={onOpenPicker}
+          className="w-full px-6 py-2 border-b border-outline-variant flex items-center justify-between hover:bg-surface-container-low min-h-[44px]"
+        >
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-outline min-w-0">
+            <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
+              {tableNumber ? "table_restaurant" : "takeout_dining"}
+            </span>
+            <span className="truncate">
+              {tableNumber ? `Τραπέζι ${tableNumber}` : "Takeaway"}
+              {guestsLabel(guests) && ` · ${guestsLabel(guests)}`}
+            </span>
+          </span>
+          <span className="text-xs font-bold text-primary shrink-0">Αλλαγή</span>
+        </button>
+      )}
 
       <div className="flex-grow overflow-y-auto p-3 flex flex-col gap-3">
         {items.map((item) => (

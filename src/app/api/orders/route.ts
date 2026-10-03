@@ -40,6 +40,7 @@ export async function GET(request: Request) {
     .select({
       id: orders.id,
       tableNumber: orders.tableNumber,
+      guests: orders.guests,
       status: orders.status,
       priority: orders.priority,
       totalCents: orders.totalCents,
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { tableNumber, orderId, items } = parsed.data;
+  const { tableNumber, guests, orderId, items } = parsed.data;
 
   // Only fetch the items actually ordered — never trust client-sent data.
   const menuItemIds = [...new Set(items.map((i) => i.menuItemId))];
@@ -183,8 +184,11 @@ export async function POST(request: Request) {
           })
         );
 
-        if (tableNumber) {
-          await tx.update(orders).set({ tableNumber }).where(eq(orders.id, orderId));
+        const orderUpdates: Partial<typeof orders.$inferInsert> = {};
+        if (tableNumber) orderUpdates.tableNumber = tableNumber;
+        if (guests !== undefined) orderUpdates.guests = guests;
+        if (Object.keys(orderUpdates).length > 0) {
+          await tx.update(orders).set(orderUpdates).where(eq(orders.id, orderId));
         }
 
         await recomputeOrderStatus(tx, orderId);
@@ -209,6 +213,7 @@ export async function POST(request: Request) {
         .values({
           userId: user.id,
           tableNumber: tableNumber || null,
+          guests: guests ?? null,
           totalCents,
           businessDate,
           dailyNumber,

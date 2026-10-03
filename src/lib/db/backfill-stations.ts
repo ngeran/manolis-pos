@@ -99,6 +99,7 @@ async function migrate() {
   // ── 4. orders: new columns (nullable first) ──
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS business_date date`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS daily_number integer`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS guests integer`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS sent_at timestamptz`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS priority boolean NOT NULL DEFAULT false`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS priority_at timestamptz`);

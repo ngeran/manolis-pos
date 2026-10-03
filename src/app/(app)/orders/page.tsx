@@ -7,7 +7,7 @@ import { useServerClock } from "@/hooks/useServerClock";
 import { StatusChip } from "@/components/service/StatusChip";
 import { TableView } from "@/components/service/TableView";
 import { formatPrice, cn } from "@/lib/utils";
-import { ageClass, ageChipClasses, formatAge, voidReasonMeta } from "@/lib/kitchen";
+import { ageClass, ageChipClasses, formatAge, guestsLabel, voidReasonMeta } from "@/lib/kitchen";
 import type { BoardOrder, OrdersPayload } from "@/lib/kitchen";
 
 const POLL_MS = 5000;
@@ -168,6 +168,12 @@ function BoardCard({
             </span>
             <span className="font-semibold text-on-surface">
               {order.tableNumber ? `Τραπέζι ${order.tableNumber}` : "Takeaway"}
+              {guestsLabel(order.guests) && (
+                <span className="text-outline font-semibold">
+                  {" "}
+                  · {guestsLabel(order.guests)}
+                </span>
+              )}
             </span>
             {order.priority && (
               <span className="bg-error text-on-error px-2 py-0.5 rounded-full text-xs font-bold animate-pulse">

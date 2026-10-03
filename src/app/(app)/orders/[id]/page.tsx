@@ -9,7 +9,7 @@ import { VoidModal } from "@/components/kitchen/VoidModal";
 import { Button } from "@/components/ui/Button";
 import { useOrderStore } from "@/lib/store";
 import { formatPrice, formatWeight, cn, calculateLineTotal } from "@/lib/utils";
-import { orderStatusMeta, voidReasonMeta } from "@/lib/kitchen";
+import { orderStatusMeta, voidReasonMeta, guestsLabel } from "@/lib/kitchen";
 import type { OrderDetailItem, OrderDetailPayload } from "@/lib/kitchen";
 import type { VoidReason } from "@/lib/db/schema";
 
@@ -163,6 +163,12 @@ export default function OrderDetailPage({
           </h1>
           <span className="text-lg font-semibold text-on-surface">
             {order.tableNumber ? `Τραπέζι ${order.tableNumber}` : "Takeaway"}
+            {guestsLabel(order.guests) && (
+              <span className="text-outline font-semibold">
+                {" "}
+                · {guestsLabel(order.guests)}
+              </span>
+            )}
           </span>
           <StatusChip status={order.status} />
           {order.priority && (

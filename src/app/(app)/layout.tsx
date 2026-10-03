@@ -8,6 +8,7 @@ import { useOrderStore } from "@/lib/store";
 import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 
+
 const navItems = [
   { href: "/pos", label: "New Order", icon: "table_restaurant" },
   { href: "/orders", label: "Orders", icon: "history" },
@@ -19,8 +20,6 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const tableNumber = useOrderStore((s) => s.tableNumber);
-  const setTableNumber = useOrderStore((s) => s.setTableNumber);
   const { theme, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -49,16 +48,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="text-2xl md:text-3xl font-bold text-primary">Manolis</span>
         </div>
         <div className="flex items-center gap-2 md:gap-6">
-          <div className="flex items-center gap-1 md:gap-3">
-            <span className="material-symbols-outlined text-primary text-xl">table_restaurant</span>
-            <input
-              type="text"
-              value={tableNumber}
-              onChange={(e) => setTableNumber(e.target.value)}
-              placeholder="Table #"
-              className="w-20 md:w-24 text-base font-semibold text-primary bg-transparent border-b border-primary-container focus:outline-none text-center"
-            />
-          </div>
           <div className="flex items-center gap-1 md:gap-3">
             <button
               onClick={toggle}

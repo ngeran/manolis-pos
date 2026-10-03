@@ -7,7 +7,7 @@ import { usePolling } from "@/hooks/usePolling";
 import { useOrderStore } from "@/lib/store";
 import { StatusChip } from "./StatusChip";
 import { formatPrice, cn } from "@/lib/utils";
-import { ageClass, ageChipClasses, formatAge } from "@/lib/kitchen";
+import { ageClass, ageChipClasses, formatAge, guestsLabel } from "@/lib/kitchen";
 import type { BoardOrder, DiningTable } from "@/lib/kitchen";
 
 /**
@@ -153,8 +153,10 @@ function OccupiedTile({
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-semibold text-outline">
-            #{o.dailyNumber} · {o.doneCount}/{o.itemCount} είδη
+          <span className="text-xs font-semibold text-outline truncate">
+            #{o.dailyNumber}
+            {guestsLabel(o.guests) && ` · ${guestsLabel(o.guests)}`}
+            {` · ${o.doneCount}/${o.itemCount}`}
           </span>
           <span className="text-sm font-bold text-primary">
             {formatPrice(o.totalCents)}
