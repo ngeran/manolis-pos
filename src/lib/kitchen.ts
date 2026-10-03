@@ -38,6 +38,11 @@ export function guestsLabel(guests: number | null | undefined): string {
   return guests === 1 ? "1 άτομο" : `${guests} άτομα`;
 }
 
+/** Display label for a table selection: "12" or "12+4" when combined. */
+export function tableSelectionLabel(tables: { name: string }[]): string {
+  return tables.map((t) => t.name).join("+");
+}
+
 export const orderStatusMeta: Record<OrderStatus, { el: string; en: string }> = {
   sent: { el: "Στάλθηκε", en: "Sent" },
   preparing: { el: "Σε εξέλιξη", en: "Preparing" },
@@ -67,6 +72,8 @@ export interface BoardOrderStation {
 export interface BoardOrder {
   id: string;
   tableNumber: string | null;
+  /** Names of the dining tables this order occupies (combined tables → several). */
+  tableNames: string[];
   guests: number | null;
   status: OrderStatus;
   priority: boolean;
@@ -99,6 +106,7 @@ export interface OrdersPayload {
 export interface DiningTable {
   id: string;
   name: string;
+  nickname: string | null;
   seats: number | null;
   sortOrder: number;
 }
@@ -130,6 +138,7 @@ export interface OrderDetailItem {
 export interface OrderDetailPayload {
   id: string;
   tableNumber: string | null;
+  tableNames: string[];
   guests: number | null;
   status: OrderStatus;
   priority: boolean;

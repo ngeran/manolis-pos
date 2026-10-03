@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useOrderStore, type CartItem } from "@/lib/store";
 import { formatPrice, formatWeight, calculateLineTotal, cn } from "@/lib/utils";
-import { guestsLabel } from "@/lib/kitchen";
+import { guestsLabel, tableSelectionLabel } from "@/lib/kitchen";
 import { QuantityStepper } from "./QuantityStepper";
 import { NoteModal } from "./NoteModal";
 import { Button } from "@/components/ui/Button";
@@ -29,7 +29,7 @@ export function OrderTicket({ onSubmit, submitting, appendMode, onOpenPicker }: 
     taxCents,
     totalCents,
     itemCount,
-    tableNumber,
+    tables,
     guests,
   } = useOrderStore();
   const [editingNotesFor, setEditingNotesFor] = useState<CartItem | null>(null);
@@ -70,10 +70,10 @@ export function OrderTicket({ onSubmit, submitting, appendMode, onOpenPicker }: 
         >
           <span className="flex items-center gap-1.5 text-sm font-semibold text-outline min-w-0">
             <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
-              {tableNumber ? "table_restaurant" : "takeout_dining"}
+              {tables.length ? "table_restaurant" : "takeout_dining"}
             </span>
             <span className="truncate">
-              {tableNumber ? `Τραπέζι ${tableNumber}` : "Takeaway"}
+              {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
               {guestsLabel(guests) && ` · ${guestsLabel(guests)}`}
             </span>
           </span>

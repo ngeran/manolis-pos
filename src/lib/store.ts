@@ -12,15 +12,22 @@ export interface CartItem {
   hold?: boolean;
 }
 
+/** A dining table selected as the order's destination. */
+export interface SelectedTable {
+  id: string;
+  name: string;
+}
+
 interface OrderState {
-  tableNumber: string;
+  /** Selected dining tables — one normally, several when combined. [] = takeaway. */
+  tables: SelectedTable[];
   /** Party size (άτομα), optional. */
   guests: number | null;
   items: CartItem[];
   /** When set, submitting appends a new round to that live order. */
   editOrderId: string | null;
   editOrderLabel: string | null;
-  setTableNumber: (table: string) => void;
+  setTableSelection: (tables: SelectedTable[]) => void;
   setGuests: (guests: number | null) => void;
   addItem: (item: Omit<CartItem, "quantityGrams"> & { quantityGrams: number }) => void;
   removeItem: (menuItemId: string) => void;
@@ -41,13 +48,13 @@ const TAX_RATE = 0.13;
 export const useOrderStore = create<OrderState>()(
   persist(
     (set, get) => ({
-      tableNumber: "",
+      tables: [],
       guests: null,
       items: [],
       editOrderId: null,
       editOrderLabel: null,
 
-      setTableNumber: (table) => set({ tableNumber: table }),
+      setTableSelection: (tables) => set({ tables }),
 
       setGuests: (guests) => set({ guests }),
 
@@ -98,7 +105,7 @@ export const useOrderStore = create<OrderState>()(
         })),
 
       clearCart: () =>
-        set({ items: [], tableNumber: "", guests: null, editOrderId: null, editOrderLabel: null }),
+        set({ items: [], tables: [], guests: null, editOrderId: null, editOrderLabel: null }),
 
       startEditOrder: (orderId, label) =>
         set({ editOrderId: orderId, editOrderLabel: label }),
@@ -119,12 +126,13 @@ export const useOrderStore = create<OrderState>()(
     }),
     {
       name: "manolis-cart",
-      version: 3,
+      version: 4,
       migrate: (persisted) => {
         const state = persisted as Partial<OrderState> | undefined;
         return {
           ...state,
           items: (state?.items ?? []).map((i) => ({ ...i, hold: i.hold ?? false })),
+          tables: Array.isArray(state?.tables) ? state.tables : [],
           guests: state?.guests ?? null,
           editOrderId: null,
           editOrderLabel: null,

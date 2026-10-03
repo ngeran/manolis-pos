@@ -3,8 +3,10 @@ import { eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import {
+  diningTables,
   orderCounters,
   orderItems,
+  orderTables,
   orders,
   stations,
   users,
@@ -158,7 +160,14 @@ export async function loadOrderDetail(orderId: string) {
     .where(eq(orderItems.orderId, orderId))
     .orderBy(orderItems.round, orderItems.sentAt);
 
-  return { ...order, items };
+  const tableRows = await db
+    .select({ name: diningTables.name, sortOrder: diningTables.sortOrder })
+    .from(orderTables)
+    .innerJoin(diningTables, eq(orderTables.tableId, diningTables.id))
+    .where(eq(orderTables.orderId, orderId))
+    .orderBy(diningTables.sortOrder);
+
+  return { ...order, tableNames: tableRows.map((t) => t.name), items };
 }
 
 export type OrderDetail = NonNullable<Awaited<ReturnType<typeof loadOrderDetail>>>;

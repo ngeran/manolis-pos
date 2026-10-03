@@ -9,6 +9,7 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const orderStatusEnum = pgEnum("order_status", [
@@ -63,9 +64,27 @@ export const stations = pgTable("stations", {
 export const diningTables = pgTable("dining_tables", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull().unique(),
+  nickname: text("nickname"),
   seats: integer("seats"),
   sortOrder: integer("sort_order").notNull().default(0),
 });
+
+/** Tables an order occupies — one table normally, several when combined. */
+export const orderTables = pgTable(
+  "order_tables",
+  {
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    tableId: uuid("table_id")
+      .notNull()
+      .references(() => diningTables.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.orderId, t.tableId] }),
+    index("order_tables_table_id_idx").on(t.tableId),
+  ]
+);
 
 export const menuItems = pgTable(
   "menu_items",

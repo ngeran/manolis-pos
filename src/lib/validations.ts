@@ -24,6 +24,9 @@ export const orderItemInputSchema = z.object({
 
 export const createOrderSchema = z.object({
   tableNumber: z.string().optional(),
+  // Dining tables the order occupies — one normally, several when combined.
+  // When present, the server derives the table label from these.
+  tableIds: z.array(z.string().uuid()).optional(),
   guests: z.number().int().min(1).max(30).optional(),
   // When present, the items are appended to that live order instead of creating one.
   orderId: z.string().uuid().optional(),
@@ -101,6 +104,7 @@ export const deleteCategorySchema = z.object({
 
 export const createTableSchema = z.object({
   name: z.string().min(1),
+  nickname: z.string().optional(),
   seats: z.number().int().min(1).optional(),
   sortOrder: z.number().int().default(0),
 });
@@ -108,6 +112,7 @@ export const createTableSchema = z.object({
 export const updateTableSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).optional(),
+  nickname: z.string().optional().nullable(),
   seats: z.number().int().min(1).optional().nullable(),
   sortOrder: z.number().int().optional(),
 });

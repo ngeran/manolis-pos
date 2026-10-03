@@ -8,10 +8,12 @@ import type { DiningTable } from "@/lib/kitchen";
 export default function AdminTablesPage() {
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [newName, setNewName] = useState("");
+  const [newNickname, setNewNickname] = useState("");
   const [newSeats, setNewSeats] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
-  const [editData, setEditData] = useState<{ name: string; seats: string }>({
+  const [editData, setEditData] = useState<{ name: string; nickname: string; seats: string }>({
     name: "",
+    nickname: "",
     seats: "",
   });
   const [error, setError] = useState("");
@@ -43,6 +45,7 @@ export default function AdminTablesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newName.trim(),
+          nickname: newNickname.trim() || undefined,
           seats: newSeats ? parseInt(newSeats, 10) : undefined,
           sortOrder: tables.length,
         }),
@@ -58,6 +61,7 @@ export default function AdminTablesPage() {
       }
       setTables((prev) => [...prev, data]);
       setNewName("");
+      setNewNickname("");
       setNewSeats("");
     } finally {
       setSaving(false);
@@ -74,6 +78,7 @@ export default function AdminTablesPage() {
         body: JSON.stringify({
           id,
           name: editData.name.trim(),
+          nickname: editData.nickname.trim() || null,
           seats: editData.seats ? parseInt(editData.seats, 10) : null,
         }),
       });
@@ -123,6 +128,13 @@ export default function AdminTablesPage() {
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
         <input
+          className="border border-outline-variant rounded-lg px-3 py-2 text-base min-h-[48px] w-40"
+          placeholder="Παρατσούκλι"
+          value={newNickname}
+          onChange={(e) => setNewNickname(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+        />
+        <input
           type="number"
           min="1"
           className="border border-outline-variant rounded-lg px-3 py-2 text-base min-h-[48px] w-28"
@@ -157,6 +169,13 @@ export default function AdminTablesPage() {
                     onKeyDown={(e) => e.key === "Enter" && handleSave(t.id)}
                   />
                   <input
+                    className="border border-outline-variant rounded-lg px-3 py-2 text-base min-h-[44px] w-40"
+                    placeholder="Παρατσούκλι"
+                    value={editData.nickname}
+                    onChange={(e) => setEditData((d) => ({ ...d, nickname: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && handleSave(t.id)}
+                  />
+                  <input
                     type="number"
                     min="1"
                     className="border border-outline-variant rounded-lg px-3 py-2 text-base min-h-[44px] w-24"
@@ -178,6 +197,9 @@ export default function AdminTablesPage() {
                 <>
                   <span className="material-symbols-outlined text-outline">table_restaurant</span>
                   <span className="font-bold text-on-surface text-lg">{t.name}</span>
+                  {t.nickname && (
+                    <span className="text-sm text-outline font-semibold">· {t.nickname}</span>
+                  )}
                   {t.seats != null && (
                     <span className="text-sm text-outline flex items-center gap-1">
                       <span className="material-symbols-outlined text-[16px]">event_seat</span>
@@ -190,7 +212,11 @@ export default function AdminTablesPage() {
                       size="sm"
                       onClick={() => {
                         setEditing(t.id);
-                        setEditData({ name: t.name, seats: t.seats?.toString() ?? "" });
+                        setEditData({
+                          name: t.name,
+                          nickname: t.nickname ?? "",
+                          seats: t.seats?.toString() ?? "",
+                        });
                       }}
                     >
                       <span className="material-symbols-outlined text-[18px]">edit</span>

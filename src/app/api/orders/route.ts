@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { menuItems, orderItems, orders, stations, users } from "@/lib/db/schema";
+import {
+  diningTables,
+  menuItems,
+  orderItems,
+  orderTables,
+  orders,
+  stations,
+  users,
+} from "@/lib/db/schema";
 import { and, desc, eq, gte, inArray, max, or } from "drizzle-orm";
 import { createOrderSchema } from "@/lib/validations";
 import { getSessionUser, unauthorized } from "@/lib/api-auth";
@@ -94,10 +102,32 @@ export async function GET(request: Request) {
     a.stations.set(key, st);
   }
 
+  // Per-order occupied table names (for the table grid's occupancy).
+  const tableRows = ids.length
+    ? await db
+        .select({
+          orderId: orderTables.orderId,
+          name: diningTables.name,
+          sortOrder: diningTables.sortOrder,
+        })
+        .from(orderTables)
+        .innerJoin(diningTables, eq(orderTables.tableId, diningTables.id))
+        .where(inArray(orderTables.orderId, ids))
+    : [];
+  const tablesByOrder = new Map<string, { name: string; sortOrder: number }[]>();
+  for (const t of tableRows) {
+    const list = tablesByOrder.get(t.orderId) ?? [];
+    list.push({ name: t.name, sortOrder: t.sortOrder });
+    tablesByOrder.set(t.orderId, list);
+  }
+
   const result = rows.map((r) => {
     const a = agg.get(r.id);
     return {
       ...r,
+      tableNames: (tablesByOrder.get(r.id) ?? [])
+        .sort((x, y) => x.sortOrder - y.sortOrder)
+        .map((t) => t.name),
       itemCount: a?.itemCount ?? 0,
       doneCount: a?.doneCount ?? 0,
       heldCount: a?.heldCount ?? 0,
@@ -119,7 +149,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { tableNumber, guests, orderId, items } = parsed.data;
+  const { tableNumber, guests, tableIds, orderId, items } = parsed.data;
+
+  // Resolve the occupied dining tables; the display label is derived from
+  // them ("12+4") so combined tables stay consistent everywhere.
+  let tableLabel = tableNumber || null;
+  let resolvedTableIds: string[] = [];
+  if (tableIds && tableIds.length > 0) {
+    const uniqueIds = [...new Set(tableIds)];
+    const rows = await db
+      .select({ id: diningTables.id, name: diningTables.name, sortOrder: diningTables.sortOrder })
+      .from(diningTables)
+      .where(inArray(diningTables.id, uniqueIds));
+    if (rows.length !== uniqueIds.length) {
+      return NextResponse.json({ error: "Unknown table in tableIds" }, { status: 400 });
+    }
+    resolvedTableIds = uniqueIds;
+    tableLabel = rows
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((r) => r.name)
+      .join("+");
+  }
 
   // Only fetch the items actually ordered — never trust client-sent data.
   const menuItemIds = [...new Set(items.map((i) => i.menuItemId))];
@@ -185,10 +235,19 @@ export async function POST(request: Request) {
         );
 
         const orderUpdates: Partial<typeof orders.$inferInsert> = {};
-        if (tableNumber) orderUpdates.tableNumber = tableNumber;
+        if (tableIds && tableIds.length > 0) orderUpdates.tableNumber = tableLabel;
+        else if (tableNumber) orderUpdates.tableNumber = tableNumber;
         if (guests !== undefined) orderUpdates.guests = guests;
         if (Object.keys(orderUpdates).length > 0) {
           await tx.update(orders).set(orderUpdates).where(eq(orders.id, orderId));
+        }
+
+        // Replace the occupied-tables link for the order.
+        await tx.delete(orderTables).where(eq(orderTables.orderId, orderId));
+        if (resolvedTableIds.length > 0) {
+          await tx
+            .insert(orderTables)
+            .values(resolvedTableIds.map((tid) => ({ orderId, tableId: tid })));
         }
 
         await recomputeOrderStatus(tx, orderId);
@@ -212,7 +271,7 @@ export async function POST(request: Request) {
         .insert(orders)
         .values({
           userId: user.id,
-          tableNumber: tableNumber || null,
+          tableNumber: tableLabel,
           guests: guests ?? null,
           totalCents,
           businessDate,
@@ -221,6 +280,12 @@ export async function POST(request: Request) {
           sentAt: now,
         })
         .returning();
+
+      if (resolvedTableIds.length > 0) {
+        await tx
+          .insert(orderTables)
+          .values(resolvedTableIds.map((tid) => ({ orderId: order.id, tableId: tid })));
+      }
 
       await tx.insert(orderItems).values(
         items.map((item) => {

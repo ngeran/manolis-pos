@@ -53,9 +53,17 @@ async function migrate() {
   await db.execute(sql`CREATE TABLE IF NOT EXISTS dining_tables (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text NOT NULL CONSTRAINT dining_tables_name_unique UNIQUE,
+    nickname text,
     seats integer,
     sort_order integer NOT NULL DEFAULT 0
   )`);
+  await db.execute(sql`ALTER TABLE dining_tables ADD COLUMN IF NOT EXISTS nickname text`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS order_tables (
+    order_id uuid NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    table_id uuid NOT NULL REFERENCES dining_tables(id) ON DELETE CASCADE,
+    PRIMARY KEY (order_id, table_id)
+  )`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS order_tables_table_id_idx ON order_tables (table_id)`);;
   await db.execute(sql`INSERT INTO dining_tables (name, seats, sort_order)
     SELECT g.name,
       CASE WHEN g.n <= 6 THEN 2 WHEN g.n <= 10 THEN 4 ELSE 6 END,

@@ -9,7 +9,7 @@ import { NoteModal } from "@/components/pos/NoteModal";
 import { TablePickerModal } from "@/components/pos/TablePickerModal";
 import { useOrderStore, type CartItem } from "@/lib/store";
 import { formatPrice, formatWeight, cn } from "@/lib/utils";
-import { guestsLabel } from "@/lib/kitchen";
+import { guestsLabel, tableSelectionLabel } from "@/lib/kitchen";
 import { useRouter } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export default function POSPage() {
   const addItem = useOrderStore((s) => s.addItem);
   const cartItems = useOrderStore((s) => s.items);
   const totalCents = useOrderStore((s) => s.totalCents);
-  const tableNumber = useOrderStore((s) => s.tableNumber);
+  const tables = useOrderStore((s) => s.tables);
   const guests = useOrderStore((s) => s.guests);
   const clearCart = useOrderStore((s) => s.clearCart);
   const editOrderId = useOrderStore((s) => s.editOrderId);
@@ -97,7 +97,8 @@ export default function POSPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableNumber: tableNumber || undefined,
+          tableNumber: tables.length ? tableSelectionLabel(tables) : undefined,
+          tableIds: tables.length ? tables.map((t) => t.id) : undefined,
           guests: guests ?? undefined,
           orderId: editOrderId || undefined,
           items: cartItems.map((i) => ({
@@ -166,10 +167,10 @@ export default function POSPage() {
               >
                 <span className="flex items-center gap-2 text-sm font-bold text-on-surface min-w-0">
                   <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
-                    {tableNumber ? "table_restaurant" : "takeout_dining"}
+                    {tables.length ? "table_restaurant" : "takeout_dining"}
                   </span>
                   <span className="truncate">
-                    {tableNumber ? `Τραπέζι ${tableNumber}` : "Takeaway"}
+                    {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
                     {guestsLabel(guests) && (
                       <span className="text-outline font-semibold">
                         {" "}
@@ -353,10 +354,10 @@ export default function POSPage() {
                   >
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-outline min-w-0">
                       <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
-                        {tableNumber ? "table_restaurant" : "takeout_dining"}
+                        {tables.length ? "table_restaurant" : "takeout_dining"}
                       </span>
                       <span className="truncate">
-                        {tableNumber ? `Τραπέζι ${tableNumber}` : "Takeaway"}
+                        {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
                         {guestsLabel(guests) && (
                           <span> · {guestsLabel(guests)}</span>
                         )}
