@@ -22,5 +22,9 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Static/ PWA assets must bypass the auth guard — browsers fetch the
+  // manifest, service worker and icons without the app's session cookie.
+  matcher: [
+    "/((?!_next/static|_next/image|_next/data|icons/|manifest.webmanifest|sw.js|apple-touch-icon.png|favicon.ico|offline).*)",
+  ],
 };

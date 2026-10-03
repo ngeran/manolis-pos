@@ -29,6 +29,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     useOrderStore.persist.rehydrate();
   }, []);
 
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch {
+      // Fullscreen unsupported (iOS Safari) — no-op.
+    }
+  };
+
   const isActive = (href: string) =>
     href === "/pos" ? pathname === "/pos" || pathname === "/" : pathname.startsWith(href);
 
@@ -57,6 +69,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="material-symbols-outlined">
                 {theme === "dark" ? "light_mode" : "dark_mode"}
               </span>
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="text-outline hover:bg-surface-container-high p-1 rounded-lg transition-colors min-h-[48px] min-w-[48px] hidden md:flex items-center justify-center"
+              title="Πλήρης οθόνη"
+            >
+              <span className="material-symbols-outlined">fullscreen</span>
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}

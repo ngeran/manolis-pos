@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -12,6 +13,16 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Manolis Orders — POS",
   description: "Fast, simple, reliable order taking",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Manolis",
+  },
 };
 
 // viewportFit: "cover" lets the fixed header and floating cart extend into
@@ -42,6 +53,7 @@ export default function RootLayout({
       </head>
       <body className="h-full font-[family-name:var(--font-outfit)]">
         <ThemeProvider>{children}</ThemeProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
