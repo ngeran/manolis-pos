@@ -25,8 +25,6 @@ export function OrderTicket({ onSubmit, submitting, appendMode, onOpenPicker }: 
     updateNotes,
     updateHold,
     clearCart,
-    subtotalCents,
-    taxCents,
     totalCents,
     itemCount,
     tables,
@@ -167,20 +165,15 @@ export function OrderTicket({ onSubmit, submitting, appendMode, onOpenPicker }: 
 
       <div className="p-6 border-t border-outline-variant bg-surface mt-auto">
         <div className="space-y-3 mb-6">
-          <div className="flex justify-between text-sm font-semibold text-outline">
-            <span>Subtotal</span>
-            <span>{formatPrice(subtotalCents())}</span>
-          </div>
-          <div className="flex justify-between text-sm font-semibold text-outline">
-            <span>Tax (13%)</span>
-            <span>{formatPrice(taxCents())}</span>
-          </div>
-          <div className="flex justify-between text-2xl font-bold text-on-surface pt-3 border-t border-outline-variant">
+          <div className="flex justify-between text-2xl font-bold text-on-surface">
             <span>Total</span>
             <span className="text-primary">{formatPrice(totalCents())}</span>
           </div>
+          <p className="text-xs font-normal text-outline -mt-1">
+            Οι τιμές περιλαμβάνουν ΦΠΑ
+          </p>
           {appendMode && (
-            <p className="text-xs font-semibold text-outline -mt-2">
+            <p className="text-xs font-semibold text-outline">
               Νέα είδη μόνο — το σύνολο της παραγγελίας ενημερώνεται αυτόματα
             </p>
           )}

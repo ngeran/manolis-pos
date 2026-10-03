@@ -86,6 +86,9 @@ export interface BoardOrder {
   cancelledAt: string | null;
   cancelReason: VoidReason | null;
   cancelNote: string | null;
+  refundedAt: string | null;
+  refundReason: VoidReason | null;
+  refundNote: string | null;
   createdAt: string;
   userId: string;
   openedByName: string | null;
@@ -151,6 +154,10 @@ export interface OrderDetailPayload {
   cancelledAt: string | null;
   cancelReason: VoidReason | null;
   cancelNote: string | null;
+  refundedAt: string | null;
+  refundReason: VoidReason | null;
+  refundNote: string | null;
+  refundedByName: string | null;
   openedByName: string | null;
   createdAt: string;
   items: OrderDetailItem[];

@@ -135,6 +135,10 @@ export const orders = pgTable(
     cancelledBy: uuid("cancelled_by").references(() => users.id),
     cancelReason: voidReasonEnum("cancel_reason"),
     cancelNote: text("cancel_note"),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    refundedBy: uuid("refunded_by").references(() => users.id),
+    refundReason: voidReasonEnum("refund_reason"),
+    refundNote: text("refund_note"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [

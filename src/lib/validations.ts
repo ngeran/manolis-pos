@@ -44,6 +44,12 @@ export const orderActionSchema = z.discriminatedUnion("action", [
     reason: voidReasonSchema,
     note: z.string().optional(),
   }),
+  z.object({
+    // Admin-only audit annotation on a PAID order (complaint / refund).
+    action: z.literal("refund"),
+    reason: voidReasonSchema,
+    note: z.string().optional(),
+  }),
 ]);
 export type OrderAction = z.infer<typeof orderActionSchema>;
 

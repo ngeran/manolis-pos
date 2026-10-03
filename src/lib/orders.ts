@@ -105,6 +105,7 @@ export async function recomputeTotalCents(tx: OrderTx, orderId: string): Promise
 }
 
 const voidingUsers = alias(users, "voiding_users");
+const refundingUsers = alias(users, "refunding_users");
 
 /** Full order payload for the detail screen — includes voided items with their audit trail. */
 export async function loadOrderDetail(orderId: string) {
@@ -124,11 +125,16 @@ export async function loadOrderDetail(orderId: string) {
       cancelledAt: orders.cancelledAt,
       cancelReason: orders.cancelReason,
       cancelNote: orders.cancelNote,
+      refundedAt: orders.refundedAt,
+      refundReason: orders.refundReason,
+      refundNote: orders.refundNote,
+      refundedByName: refundingUsers.name,
       openedByName: users.name,
       createdAt: orders.createdAt,
     })
     .from(orders)
     .leftJoin(users, eq(orders.userId, users.id))
+    .leftJoin(refundingUsers, eq(orders.refundedBy, refundingUsers.id))
     .where(eq(orders.id, orderId));
   if (!order) return null;
 

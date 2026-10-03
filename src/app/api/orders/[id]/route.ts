@@ -114,6 +114,30 @@ export async function PATCH(
             .where(eq(orders.id, id));
           break;
         }
+        case "refund": {
+          if (!isAdminUser(user)) {
+            throw new OrderError(403, "Only admins can mark a refund");
+          }
+          if (order.status !== "paid") {
+            throw new OrderError(409, "Only paid orders can be marked as refunded");
+          }
+          if (order.refundedAt) {
+            throw new OrderError(409, "Order is already marked as refunded");
+          }
+          if (action.reason === "other" && !action.note?.trim()) {
+            throw new OrderError(400, "A note is required when the reason is 'other'");
+          }
+          await tx
+            .update(orders)
+            .set({
+              refundedAt: new Date(),
+              refundedBy: user.id,
+              refundReason: action.reason,
+              refundNote: action.note ?? null,
+            })
+            .where(eq(orders.id, id));
+          break;
+        }
       }
 
       if (action.action === "fire") {

@@ -31,7 +31,10 @@ export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) return unauthorized();
 
-  const scope = new URL(request.url).searchParams.get("scope") ?? "all";
+  const params = new URL(request.url).searchParams;
+  const scope = params.get("scope") ?? "all";
+  // Optional lookback window for history (Athens business date, inclusive).
+  const from = params.get("from");
 
   let where;
   if (scope === "active") {
@@ -41,7 +44,10 @@ export async function GET(request: Request) {
       and(eq(orders.status, "served"), gte(orders.servedAt, cutoff))
     );
   } else if (scope === "closed") {
-    where = inArray(orders.status, ["paid", "cancelled"]);
+    where = and(
+      inArray(orders.status, ["paid", "cancelled"]),
+      from ? gte(orders.businessDate, from) : undefined
+    );
   }
 
   const rows = await db
@@ -60,6 +66,9 @@ export async function GET(request: Request) {
       cancelledAt: orders.cancelledAt,
       cancelReason: orders.cancelReason,
       cancelNote: orders.cancelNote,
+      refundedAt: orders.refundedAt,
+      refundReason: orders.refundReason,
+      refundNote: orders.refundNote,
       createdAt: orders.createdAt,
       userId: orders.userId,
       openedByName: users.name,
@@ -67,7 +76,8 @@ export async function GET(request: Request) {
     .from(orders)
     .leftJoin(users, eq(orders.userId, users.id))
     .where(where)
-    .orderBy(desc(orders.priority), desc(orders.sentAt));
+    .orderBy(desc(orders.priority), desc(orders.sentAt))
+    .limit(scope === "closed" ? 500 : 1000);
 
   // Per-order item aggregates + per-station progress for the board.
   const ids = rows.map((r) => r.id);

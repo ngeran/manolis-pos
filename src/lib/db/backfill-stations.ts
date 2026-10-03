@@ -117,6 +117,10 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by uuid REFERENCES users(id)`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancel_reason void_reason`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancel_note text`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_at timestamptz`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refunded_by uuid REFERENCES users(id)`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_reason void_reason`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_note text`);
 
   // ── 5. Legacy text status → enum ──
   await db.execute(sql`ALTER TABLE orders ALTER COLUMN status DROP DEFAULT`);

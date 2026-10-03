@@ -33,6 +33,7 @@ export default function OrderDetailPage({
   const [role, setRole] = useState<string | null>(null);
   const [voiding, setVoiding] = useState<OrderDetailItem | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
   const [confirmPaid, setConfirmPaid] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -192,6 +193,14 @@ export default function OrderDetailPage({
             {order.cancelNote ? ` — ${order.cancelNote}` : ""}
           </div>
         )}
+        {order.refundReason && (
+          <div className="mt-2 bg-error-container text-error rounded-lg px-3 py-2 text-sm font-semibold">
+            ΕΠΙΣΤΡΟΦΗ: {voidReasonMeta[order.refundReason]}
+            {order.refundNote ? ` — ${order.refundNote}` : ""}
+            {order.refundedAt ? ` · ${timeEl(order.refundedAt)}` : ""}
+            {order.refundedByName ? ` · ${order.refundedByName}` : ""}
+          </div>
+        )}
       </div>
 
       {actionError && (
@@ -341,6 +350,12 @@ export default function OrderDetailPage({
                 Κλείσιμο ως Πληρωμένη
               </Button>
             )}
+            {isAdmin && order.status === "paid" && !order.refundReason && (
+              <Button variant="danger" size="md" onClick={() => setRefundOpen(true)}>
+                <span className="material-symbols-outlined text-[20px]">assignment_return</span>
+                Επιστροφή
+              </Button>
+            )}
             <div className="flex-1" />
             {isAdmin && (
               <Button variant="danger" size="md" onClick={() => setCancelling(true)}>
@@ -376,6 +391,19 @@ export default function OrderDetailPage({
             await act({ action: "cancel", reason, note });
           }}
           onCancel={() => setCancelling(false)}
+        />
+      )}
+
+      {refundOpen && (
+        <VoidModal
+          title="Σήμανση ως Επιστροφή"
+          subtitle={`#${order.dailyNumber}${order.tableNumber ? ` · Τραπέζι ${order.tableNumber}` : ""} · ${formatPrice(order.totalCents)}`}
+          confirmLabel="Επιστροφή"
+          onConfirm={async (reason: VoidReason, note?: string) => {
+            setRefundOpen(false);
+            await act({ action: "refund", reason, note });
+          }}
+          onCancel={() => setRefundOpen(false)}
         />
       )}
 
