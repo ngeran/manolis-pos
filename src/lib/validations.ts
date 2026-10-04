@@ -98,6 +98,8 @@ export const orderActionSchema = z.discriminatedUnion("action", [
 export type OrderAction = z.infer<typeof orderActionSchema>;
 
 export const itemActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("start") }),
+  z.object({ action: z.literal("unstart") }),
   z.object({ action: z.literal("bump") }),
   z.object({ action: z.literal("unbump") }),
   z.object({ action: z.literal("fire") }),

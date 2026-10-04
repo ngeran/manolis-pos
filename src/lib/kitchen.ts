@@ -75,7 +75,7 @@ export interface BoardOrderItem {
   quantityGrams: number;
   pricingType: string;
   priceAtTimeCents: number;
-  status: "held" | "queued" | "done" | "voided";
+  status: "held" | "queued" | "in_progress" | "done" | "voided";
   round: number;
   stationSlug: string | null;
   stationNameEl: string | null;
@@ -155,11 +155,13 @@ export interface OrderDetailItem {
   pricingType: string;
   priceAtTimeCents: number;
   notes: string | null;
-  status: "held" | "queued" | "done" | "voided";
+  status: "held" | "queued" | "in_progress" | "done" | "voided";
   round: number;
   sentAt: string;
   firedAt: string | null;
   doneAt: string | null;
+  startedAt: string | null;
+  startedByName: string | null;
   bumpedByName: string | null;
   stationSlug: string | null;
   stationNameEl: string | null;
@@ -207,10 +209,12 @@ export interface KitchenItem {
   quantityGrams: number;
   pricingType: string;
   notes: string | null;
-  status: "held" | "queued" | "done";
+  status: "held" | "queued" | "in_progress" | "done";
   round: number;
   sentAt: string;
   firedAt: string | null;
+  /** When the cook tagged the item as in progress. */
+  startedAt: string | null;
   doneAt: string | null;
   stationId: string;
   stationSlug: string | null;

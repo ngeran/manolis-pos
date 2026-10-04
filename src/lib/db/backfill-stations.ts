@@ -32,6 +32,7 @@ async function migrate() {
   await db.execute(sql`DO $$ BEGIN CREATE TYPE reservation_status AS ENUM ('reserved','seated','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
   await db.execute(sql`ALTER TYPE reservation_status ADD VALUE IF NOT EXISTS 'confirmed'`);
   await db.execute(sql`ALTER TYPE reservation_status ADD VALUE IF NOT EXISTS 'no_show'`);
+  await db.execute(sql`ALTER TYPE order_item_status ADD VALUE IF NOT EXISTS 'in_progress'`);
 
   // ── 2. Stations + counters ──
   await db.execute(sql`CREATE TABLE IF NOT EXISTS stations (
@@ -194,6 +195,8 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sent_at timestamptz`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS fired_at timestamptz`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS done_at timestamptz`);
+  await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS started_at timestamptz`);
+  await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS started_by uuid REFERENCES users(id)`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS bumped_by uuid REFERENCES users(id)`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_reason void_reason`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_note text`);

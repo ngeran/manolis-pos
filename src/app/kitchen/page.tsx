@@ -139,6 +139,16 @@ export default function KitchenPage() {
     [act]
   );
 
+  const onStart = useCallback(
+    (item: KitchenItem) => act(`/api/orders/${item.orderId}/items/${item.id}`, { action: "start" }),
+    [act]
+  );
+
+  const onUnstart = useCallback(
+    (item: KitchenItem) => act(`/api/orders/${item.orderId}/items/${item.id}`, { action: "unstart" }),
+    [act]
+  );
+
   const onFire = useCallback(
     (item: KitchenItem) => act(`/api/orders/${item.orderId}/items/${item.id}`, { action: "fire" }),
     [act]
@@ -211,7 +221,9 @@ export default function KitchenPage() {
         (sum, t) =>
           sum +
           t.items.filter(
-            (i) => i.stationId === stationId && (i.status === "queued" || i.status === "held")
+            (i) =>
+              i.stationId === stationId &&
+              (i.status === "queued" || i.status === "held" || i.status === "in_progress")
           ).length,
         0
       ),
@@ -328,6 +340,8 @@ export default function KitchenPage() {
                 nowMs={nowMs}
                 onBump={onBump}
                 onUnbump={onUnbump}
+                onStart={onStart}
+                onUnstart={onUnstart}
                 onFire={onFire}
                 onFireAll={() => onFireAll(ticket)}
                 onVoid={setVoiding}

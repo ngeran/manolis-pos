@@ -11,6 +11,8 @@ interface TicketCardProps {
   nowMs: number;
   onBump: (item: KitchenItem) => void;
   onUnbump: (item: KitchenItem) => void;
+  onStart: (item: KitchenItem) => void;
+  onUnstart: (item: KitchenItem) => void;
   onFire: (item: KitchenItem) => void;
   onFireAll: () => void;
   onVoid: (item: KitchenItem) => void;
@@ -22,11 +24,15 @@ export function TicketCard({
   nowMs,
   onBump,
   onUnbump,
+  onStart,
+  onUnstart,
   onFire,
   onFireAll,
   onVoid,
 }: TicketCardProps) {
-  const active = ticket.items.filter((i) => i.status === "queued");
+  const active = ticket.items.filter(
+    (i) => i.status === "queued" || i.status === "in_progress"
+  );
   const held = ticket.items.filter((i) => i.status === "held");
   const done = ticket.items.filter((i) => i.status === "done");
   const rounds = [...new Set(active.map((i) => i.round))].sort((a, b) => a - b);
@@ -135,44 +141,72 @@ export function TicketCard({
             )}
             {active
               .filter((i) => i.round === round)
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-stretch border-b border-outline-variant/50 last:border-0"
-                >
-                  <button
-                    onClick={() => onBump(item)}
-                    className="flex-1 min-h-[56px] px-3 py-2 text-left flex items-center justify-between gap-2 hover:bg-primary-container/10 active:bg-primary-container/20 transition-colors"
-                    title="Έτοιμο — πάτα για σβήσιμο"
+              .map((item) => {
+                const inProgress = item.status === "in_progress";
+                const grillMinutes = item.startedAt
+                  ? Math.max(0, Math.floor((nowMs - Date.parse(item.startedAt)) / 60000))
+                  : 0;
+                return (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "flex items-stretch border-b border-outline-variant/50 last:border-0",
+                      inProgress && "bg-warning-container/40"
+                    )}
                   >
-                    <span className="min-w-0">
-                      <span className="font-bold text-on-surface text-base">
-                        {item.nameEl}
+                    <button
+                      onClick={() => (inProgress ? onBump(item) : onStart(item))}
+                      className="flex-1 min-h-[56px] px-3 py-2 text-left flex items-center justify-between gap-2 hover:bg-primary-container/10 active:bg-primary-container/20 transition-colors"
+                      title={
+                        inProgress
+                          ? "Έτοιμο — πάτα όταν βγει από τη σχάρα"
+                          : "Στο ψήσιμο — πάτα όταν ξεκινήσει"
+                      }
+                    >
+                      <span className="min-w-0">
+                        <span className="font-bold text-on-surface text-base">
+                          {item.nameEl}
+                        </span>
+                        {item.pricingType === "weight" && (
+                          <span className="text-outline text-sm font-semibold ml-2">
+                            {formatWeight(item.quantityGrams)}
+                          </span>
+                        )}
+                        {item.notes && (
+                          <span className="block text-xs font-semibold text-tertiary">
+                            {item.notes}
+                          </span>
+                        )}
                       </span>
-                      {item.pricingType === "weight" && (
-                        <span className="text-outline text-sm font-semibold ml-2">
-                          {formatWeight(item.quantityGrams)}
+                      <span className="flex items-center gap-2 shrink-0">
+                        {inProgress && (
+                          <span className="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold">
+                            Στο ψήσιμο{" "}
+                            {item.startedAt
+                              ? Math.max(0, Math.floor((nowMs - Date.parse(item.startedAt)) / 60000)) + "′"
+                              : ""}
+                          </span>
+                        )}
+                        <span
+                          className={cn(
+                            "material-symbols-outlined shrink-0",
+                            inProgress ? "text-primary" : "text-outline"
+                          )}
+                        >
+                          {inProgress ? "check_circle" : "radio_button_unchecked"}
                         </span>
-                      )}
-                      {item.notes && (
-                        <span className="block text-xs font-semibold text-tertiary">
-                          {item.notes}
-                        </span>
-                      )}
-                    </span>
-                    <span className="material-symbols-outlined text-primary shrink-0">
-                      check_circle
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => onVoid(item)}
-                    className="w-12 flex items-center justify-center text-outline hover:bg-error-container/10 hover:text-error border-l border-outline-variant/50 min-h-[48px]"
-                    title="Ακύρωση προϊόντος"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                  </button>
-                </div>
-              ))}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => onVoid(item)}
+                      className="w-12 flex items-center justify-center text-outline hover:bg-error-container/10 hover:text-error border-l border-outline-variant/50 min-h-[48px]"
+                      title="Ακύρωση προϊόντος"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                    </button>
+                  </div>
+                );
+              })}
           </div>
         ))}
       </div>

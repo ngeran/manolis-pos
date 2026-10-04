@@ -279,11 +279,16 @@ export default function OrderDetailPage({
 
       {/* Items grouped by station → round */}
       <div className="flex-1 px-4 md:px-6 py-3 flex flex-col gap-4">
-        {/* Pending / ready / held summary */}
+        {/* Pending / grilling / ready / held summary */}
         <div className="flex flex-wrap gap-1.5">
           {openItems.some((i) => i.status === "queued") && (
             <span className="bg-warning-container text-on-warning-container rounded-full px-3 py-1 text-xs font-bold">
               Εκκρεμή: {openItems.filter((i) => i.status === "queued").length}
+            </span>
+          )}
+          {openItems.some((i) => i.status === "in_progress") && (
+            <span className="bg-secondary-container text-on-secondary-container rounded-full px-3 py-1 text-xs font-bold">
+              Στο ψήσιμο: {openItems.filter((i) => i.status === "in_progress").length}
             </span>
           )}
           {openItems.some((i) => i.status === "done") && (
@@ -376,6 +381,8 @@ export default function OrderDetailPage({
                             <span className="material-symbols-outlined text-[16px]">schedule</span>
                             Αναμονή
                           </span>
+                        ) : item.status === "in_progress" ? (
+                          <span className="text-secondary font-bold text-xs">Στο ψήσιμο</span>
                         ) : item.status === "queued" ? (
                           <span className="text-warning font-bold text-xs">Σε εξέλιξη</span>
                         ) : null}

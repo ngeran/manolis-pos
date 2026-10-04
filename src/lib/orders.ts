@@ -121,6 +121,7 @@ export async function recomputeTotalCents(tx: OrderTx, orderId: string): Promise
 const voidingUsers = alias(users, "voiding_users");
 const refundingUsers = alias(users, "refunding_users");
 const bumpingUsers = alias(users, "bumping_users");
+const startingUsers = alias(users, "starting_users");
 
 /** Who is performing an action — role decides which actions are allowed. */
 export interface OrderActor {
@@ -262,9 +263,38 @@ export async function applyItemAction(
   if (!item) throw new OrderError(404, "Item not found");
 
   switch (action.action) {
-    case "bump": {
+    case "start": {
+      // Tag an item as in progress (on the grill / being prepared).
+      if (isTerminalStatus(order.status)) throw new OrderError(409, "Order already closed");
       if (item.status !== "queued") {
-        throw new OrderError(409, `Only queued items can be bumped (item is ${item.status})`);
+        throw new OrderError(409, `Only queued items can be started (item is ${item.status})`);
+      }
+      await tx
+        .update(orderItems)
+        .set({ status: "in_progress", startedAt: new Date(), startedBy: actor.id })
+        .where(eq(orderItems.id, itemId));
+      break;
+    }
+    case "unstart": {
+      // Untag a mistakenly started item — back to the queue.
+      if (isTerminalStatus(order.status)) throw new OrderError(409, "Order already closed");
+      if (item.status !== "in_progress") {
+        throw new OrderError(409, `Only in-progress items can be unstarted (item is ${item.status})`);
+      }
+      await tx
+        .update(orderItems)
+        .set({ status: "queued", startedAt: null, startedBy: null })
+        .where(eq(orderItems.id, itemId));
+      break;
+    }
+    case "bump": {
+      // Complete an item — from the queue or while in progress.
+      if (isTerminalStatus(order.status)) throw new OrderError(409, "Order already closed");
+      if (item.status !== "queued" && item.status !== "in_progress") {
+        throw new OrderError(
+          409,
+          `Only queued or in-progress items can be bumped (item is ${item.status})`
+        );
       }
       await tx
         .update(orderItems)
@@ -367,6 +397,8 @@ export async function loadOrderDetail(orderId: string) {
       sentAt: orderItems.sentAt,
       firedAt: orderItems.firedAt,
       doneAt: orderItems.doneAt,
+      startedAt: orderItems.startedAt,
+      startedByName: startingUsers.name,
       bumpedByName: bumpingUsers.name,
       stationSlug: stations.slug,
       stationNameEl: stations.nameEl,
@@ -379,6 +411,7 @@ export async function loadOrderDetail(orderId: string) {
     .leftJoin(stations, eq(orderItems.stationId, stations.id))
     .leftJoin(voidingUsers, eq(orderItems.voidedBy, voidingUsers.id))
     .leftJoin(bumpingUsers, eq(orderItems.bumpedBy, bumpingUsers.id))
+    .leftJoin(startingUsers, eq(orderItems.startedBy, startingUsers.id))
     .where(eq(orderItems.orderId, orderId))
     .orderBy(orderItems.round, orderItems.sentAt);
 

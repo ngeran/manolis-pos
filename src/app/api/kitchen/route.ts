@@ -43,7 +43,7 @@ export async function GET(request: Request) {
             inArray(orders.status, ["sent", "preparing", "ready"]),
             ne(orderItems.status, "voided"),
             or(
-              inArray(orderItems.status, ["held", "queued"]),
+              inArray(orderItems.status, ["held", "queued", "in_progress"]),
               gte(orderItems.doneAt, doneCutoff)
             )
           ),
@@ -89,6 +89,7 @@ export async function GET(request: Request) {
         round: orderItems.round,
         sentAt: orderItems.sentAt,
         firedAt: orderItems.firedAt,
+        startedAt: orderItems.startedAt,
         doneAt: orderItems.doneAt,
         stationId: orderItems.stationId,
         stationSlug: stations.slug,
@@ -117,12 +118,14 @@ export async function GET(request: Request) {
       // How many items other stations still owe (context for this station's cook).
       const otherOpenCount = stationId
         ? allItems.filter(
-            (i) => i.stationId !== stationId && (i.status === "held" || i.status === "queued")
+            (i) =>
+              i.stationId !== stationId &&
+              (i.status === "held" || i.status === "queued" || i.status === "in_progress")
           ).length
         : 0;
 
       const activeTimes = allItems
-        .filter((i) => i.status === "held" || i.status === "queued")
+        .filter((i) => i.status === "held" || i.status === "queued" || i.status === "in_progress")
         .map((i) => (i.firedAt ?? i.sentAt).getTime());
       const oldestActive = activeTimes.length > 0 ? Math.min(...activeTimes) : null;
 

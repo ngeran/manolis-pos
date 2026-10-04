@@ -22,12 +22,6 @@ export const orderStatusEnum = pgEnum("order_status", [
   "paid",
   "cancelled",
 ]);
-export const orderItemStatusEnum = pgEnum("order_item_status", [
-  "held",
-  "queued",
-  "done",
-  "voided",
-]);
 export const voidReasonEnum = pgEnum("void_reason", [
   "wrong_item",
   "unavailable_86",
@@ -42,6 +36,15 @@ export const reservationStatusEnum = pgEnum("reservation_status", [
   "seated",
   "cancelled",
   "no_show",
+]);
+// "in_progress" is last because ALTER TYPE ADD VALUE appends — the database
+// column order must match this declaration for drizzle-kit push.
+export const orderItemStatusEnum = pgEnum("order_item_status", [
+  "held",
+  "queued",
+  "done",
+  "voided",
+  "in_progress",
 ]);
 
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
@@ -227,6 +230,9 @@ export const orderItems = pgTable(
     round: integer("round").notNull().default(1),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     firedAt: timestamp("fired_at", { withTimezone: true }),
+    /** Tagged as in progress (on the grill): who started and when. */
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    startedBy: uuid("started_by").references(() => users.id),
     doneAt: timestamp("done_at", { withTimezone: true }),
     /** Who bumped the item done (kitchen accountability). */
     bumpedBy: uuid("bumped_by").references(() => users.id),
