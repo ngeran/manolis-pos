@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
+  customers,
   diningTables,
   menuItems,
   orderItems,
@@ -10,7 +11,7 @@ import {
   stations,
   users,
 } from "@/lib/db/schema";
-import { and, desc, eq, gte, inArray, lte, max, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, max, or, sql } from "drizzle-orm";
 import { createOrderSchema } from "@/lib/validations";
 import { getSessionUser, unauthorized } from "@/lib/api-auth";
 import {
@@ -182,15 +183,18 @@ export async function POST(request: Request) {
   // Seating a reservation: pre-fill table/party/name from it and mark it seated
   // once the order is created.
   let reservation: typeof reservations.$inferSelect | null = null;
+  let reservationCustomer: typeof customers.$inferSelect | null = null;
   if (reservationId) {
     const [r] = await db.select().from(reservations).where(eq(reservations.id, reservationId));
     if (!r) {
       return NextResponse.json({ error: "Reservation not found" }, { status: 400 });
     }
-    if (r.status !== "reserved") {
+    if (r.status !== "confirmed") {
       return NextResponse.json({ error: "Reservation is not active" }, { status: 409 });
     }
+    const [c] = await db.select().from(customers).where(eq(customers.id, r.customerId));
     reservation = r;
+    reservationCustomer = c ?? null;
   }
 
   const effectiveTableIds =
@@ -199,8 +203,12 @@ export async function POST(request: Request) {
       : reservation?.tableId
         ? [reservation.tableId]
         : undefined;
-  const effectiveGuests = guests ?? reservation?.guests ?? undefined;
-  const effectiveGuestName = guestName ?? reservation?.name ?? undefined;
+  const effectiveGuests = guests ?? reservation?.partySize ?? undefined;
+  const effectiveGuestName =
+    guestName ??
+    (reservationCustomer
+      ? `${reservationCustomer.firstName} ${reservationCustomer.lastName}`.trim()
+      : undefined);
 
   // Resolve the occupied dining tables; the display label is derived from
   // them ("12+4") so combined tables stay consistent everywhere.
@@ -344,12 +352,23 @@ export async function POST(request: Request) {
         const seated = await tx
           .update(reservations)
           .set({ status: "seated", orderId: order.id })
-          .where(and(eq(reservations.id, reservation.id), eq(reservations.status, "reserved")))
+          .where(and(eq(reservations.id, reservation.id), eq(reservations.status, "confirmed")))
           .returning();
         if (seated.length === 0) {
           // Two staff seated the same reservation at once — roll everything back.
           throw new OrderError(409, "Reservation is not active");
         }
+      }
+
+      // CRM: the visit counts the moment the party is seated.
+      if (reservationCustomer) {
+        await tx
+          .update(customers)
+          .set({
+            totalVisits: sql`${customers.totalVisits} + 1`,
+            lastVisit: new Date(),
+          })
+          .where(eq(customers.id, reservationCustomer.id));
       }
 
       await tx.insert(orderItems).values(

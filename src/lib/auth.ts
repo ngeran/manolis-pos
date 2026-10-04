@@ -4,6 +4,7 @@ import { compareSync } from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { isLockedOut, recordFailure, clearFailures } from "@/lib/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -14,6 +15,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        const key = (credentials.email as string).toLowerCase();
+        if (isLockedOut(key)) return null;
 
         const [user] = await db
           .select()
@@ -27,8 +31,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           credentials.password as string,
           user.password
         );
-        if (!valid) return null;
+        if (!valid) {
+          recordFailure(key);
+          return null;
+        }
 
+        clearFailures(key);
         return {
           id: user.id,
           email: user.email,

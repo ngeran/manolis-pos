@@ -37,24 +37,43 @@ export const createOrderSchema = z.object({
 });
 
 export const createReservationSchema = z.object({
-  businessDate: z.string().optional(),
-  time: z.string().regex(/^\d{2}:\d{2}$/),
-  name: z.string().min(1).max(80),
-  guests: z.number().int().min(1).max(30),
-  phone: z.string().max(40).optional(),
-  notes: z.string().max(300).optional(),
+  customerId: z.string().uuid().optional(),
+  customerName: z.string().min(1).max(120).optional(),
+  customerPhone: z.string().min(6).max(20).optional(),
+  partySize: z.number().int().min(1).max(30),
+  reservationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  reservationTime: z.string().regex(/^([01]\d|2[0-3]):(00|30)(:00)?$/),
   tableId: z.string().uuid().optional(),
+  specialRequests: z.string().max(300).optional(),
 });
 
 export const updateReservationSchema = z.object({
-  id: z.string().uuid(),
-  time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-  name: z.string().min(1).max(80).optional(),
-  guests: z.number().int().min(1).max(30).optional(),
-  phone: z.string().max(40).optional().nullable(),
-  notes: z.string().max(300).optional().nullable(),
+  partySize: z.number().int().min(1).max(30).optional(),
+  reservationTime: z.string().regex(/^([01]\d|2[0-3]):(00|30)(:00)?$/).optional(),
+  status: z.enum(["confirmed", "seated", "cancelled", "no_show"]).optional(),
+  specialRequests: z.string().max(300).optional().nullable(),
   tableId: z.string().uuid().optional().nullable(),
-  status: z.enum(["reserved", "cancelled"]).optional(),
+});
+
+export const createCustomerSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().max(100).default(""),
+  phone: z.string().regex(/^\+?[0-9][0-9\s-]{5,18}$/),
+  email: z.string().email().optional(),
+  dietaryNotes: z.string().max(300).optional(),
+  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  optInMarketing: z.boolean().optional(),
+});
+
+export const updateCustomerSchema = z.object({
+  id: z.string().uuid(),
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().max(100).optional(),
+  phone: z.string().regex(/^\+?[0-9][0-9\s-]{5,18}$/).optional(),
+  email: z.string().email().optional().nullable(),
+  dietaryNotes: z.string().max(300).optional().nullable(),
+  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  optInMarketing: z.boolean().optional(),
 });
 
 export const orderActionSchema = z.discriminatedUnion("action", [

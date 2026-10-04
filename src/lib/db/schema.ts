@@ -2,10 +2,12 @@ import {
   pgTable,
   pgEnum,
   uuid,
+  varchar,
   text,
   integer,
   boolean,
   date,
+  time,
   timestamp,
   index,
   uniqueIndex,
@@ -33,10 +35,13 @@ export const voidReasonEnum = pgEnum("void_reason", [
   "kitchen_error",
   "other",
 ]);
+// "reserved" is a legacy value kept so the existing database type matches.
 export const reservationStatusEnum = pgEnum("reservation_status", [
   "reserved",
+  "confirmed",
   "seated",
   "cancelled",
+  "no_show",
 ]);
 
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
@@ -92,22 +97,44 @@ export const orderTables = pgTable(
   ]
 );
 
+// ── Customers (CRM, ported from manolis-booking) ──────────────────────
+
+export const customers = pgTable("customers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull().default(""),
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
+  email: varchar("email", { length: 255 }),
+  totalVisits: integer("total_visits").notNull().default(0),
+  totalSpentCents: integer("total_spent_cents").notNull().default(0),
+  dietaryNotes: text("dietary_notes"),
+  birthday: date("birthday"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastVisit: timestamp("last_visit", { withTimezone: true }),
+  optInMarketing: boolean("opt_in_marketing").notNull().default(false),
+});
+
+// ── Reservations (ported from manolis-booking + POS table/order links) ──
+
 export const reservations = pgTable(
   "reservations",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    businessDate: date("business_date").notNull(),
-    time: text("time").notNull(),
-    name: text("name").notNull(),
-    guests: integer("guests").notNull(),
-    phone: text("phone"),
-    notes: text("notes"),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customers.id, { onDelete: "cascade" }),
+    partySize: integer("party_size").notNull(),
+    reservationDate: date("reservation_date").notNull(),
+    reservationTime: time("reservation_time").notNull(),
+    employeeId: uuid("employee_id").references(() => users.id),
+    status: reservationStatusEnum("status").notNull().default("confirmed"),
+    specialRequests: text("special_requests"),
+    // POS extensions: table assignment and the order that seated the party.
     tableId: uuid("table_id").references(() => diningTables.id),
-    status: reservationStatusEnum("status").notNull().default("reserved"),
     orderId: uuid("order_id").references(() => orders.id),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("reservations_business_date_idx").on(t.businessDate)]
+  (t) => [index("reservations_reservation_date_idx").on(t.reservationDate)]
 );
 
 export const menuItems = pgTable(

@@ -30,6 +30,8 @@ async function migrate() {
   await db.execute(sql`DO $$ BEGIN CREATE TYPE order_item_status AS ENUM ('held','queued','done','voided'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
   await db.execute(sql`DO $$ BEGIN CREATE TYPE void_reason AS ENUM ('wrong_item','unavailable_86','customer_changed_mind','kitchen_error','other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
   await db.execute(sql`DO $$ BEGIN CREATE TYPE reservation_status AS ENUM ('reserved','seated','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+  await db.execute(sql`ALTER TYPE reservation_status ADD VALUE IF NOT EXISTS 'confirmed'`);
+  await db.execute(sql`ALTER TYPE reservation_status ADD VALUE IF NOT EXISTS 'no_show'`);
 
   // ── 2. Stations + counters ──
   await db.execute(sql`CREATE TABLE IF NOT EXISTS stations (
@@ -124,21 +126,37 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS refund_note text`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS guest_name text`);
 
-  // ── Reservations (phone bookings; seated when the party arrives) ──
+  // ── Reservations v2 (ported from manolis-booking: customer-linked) ──
+  // Replaces the v1 name-based table; customers CRM is new.
+  await db.execute(sql`DROP TABLE IF EXISTS reservations`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS customers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    first_name varchar(100) NOT NULL,
+    last_name varchar(100) NOT NULL DEFAULT '',
+    phone varchar(20) NOT NULL CONSTRAINT customers_phone_key UNIQUE,
+    email varchar(255),
+    total_visits integer NOT NULL DEFAULT 0,
+    total_spent_cents integer NOT NULL DEFAULT 0,
+    dietary_notes text,
+    birthday date,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    last_visit timestamptz,
+    opt_in_marketing boolean NOT NULL DEFAULT false
+  )`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS reservations (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    business_date date NOT NULL,
-    time text NOT NULL,
-    name text NOT NULL,
-    guests integer NOT NULL,
-    phone text,
-    notes text,
+    customer_id uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    party_size integer NOT NULL,
+    reservation_date date NOT NULL,
+    reservation_time time NOT NULL,
+    employee_id uuid REFERENCES users(id),
+    status reservation_status NOT NULL DEFAULT 'confirmed',
+    special_requests text,
     table_id uuid REFERENCES dining_tables(id),
-    status reservation_status NOT NULL DEFAULT 'reserved',
     order_id uuid REFERENCES orders(id),
-    created_at timestamp NOT NULL DEFAULT now()
+    created_at timestamptz NOT NULL DEFAULT now()
   )`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS reservations_business_date_idx ON reservations (business_date)`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS reservations_reservation_date_idx ON reservations (reservation_date)`);
 
   // ── 5. Legacy text status → enum ──
   await db.execute(sql`ALTER TABLE orders ALTER COLUMN status DROP DEFAULT`);

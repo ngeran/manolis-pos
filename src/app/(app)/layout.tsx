@@ -13,6 +13,7 @@ const navItems = [
   { href: "/pos", label: "New Order", icon: "table_restaurant" },
   { href: "/orders", label: "Orders", icon: "history" },
   { href: "/reservations", label: "Κρατήσεις", icon: "event_available" },
+  { href: "/customers", label: "Πελάτες", icon: "group" },
   { href: "/kitchen", label: "Kitchen", icon: "skillet" },
   { href: "/admin/menu", label: "Menu Admin", icon: "restaurant" },
   { href: "/admin/tables", label: "Tables", icon: "event_seat" },
