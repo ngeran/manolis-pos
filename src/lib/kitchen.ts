@@ -160,6 +160,7 @@ export interface OrderDetailItem {
   sentAt: string;
   firedAt: string | null;
   doneAt: string | null;
+  bumpedByName: string | null;
   stationSlug: string | null;
   stationNameEl: string | null;
   voidedReason: VoidReason | null;
@@ -180,6 +181,8 @@ export interface OrderDetailPayload {
   businessDate: string;
   dailyNumber: number;
   sentAt: string;
+  preparingAt: string | null;
+  readyAt: string | null;
   servedAt: string | null;
   paidAt: string | null;
   cancelledAt: string | null;

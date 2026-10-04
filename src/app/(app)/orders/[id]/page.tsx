@@ -20,6 +20,63 @@ function timeEl(iso: string | null): string {
   return new Date(iso).toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" });
 }
 
+/** End-to-end progress strip: sent → preparing → ready → served → paid. */
+function Timeline({ order }: { order: OrderDetailPayload }) {
+  const stages = [
+    { label: "Στάλθηκε", at: order.sentAt },
+    { label: "Σε εξέλιξη", at: order.preparingAt },
+    { label: "Έτοιμο", at: order.readyAt },
+    { label: "Σερβιρίστηκε", at: order.servedAt },
+    { label: "Πληρώθηκε", at: order.paidAt },
+  ];
+  const reachedIdx = stages.reduce((last, s, i) => (s.at ? i : last), 0);
+
+  return (
+    <div className="mt-4 flex items-start">
+      {stages.map((stage, i) => {
+        const reached = i <= reachedIdx;
+        return (
+          <div key={stage.label} className="flex-1 flex flex-col items-center relative min-w-0">
+            {i > 0 && (
+              <div
+                className={cn(
+                  "absolute top-2 left-0 right-1/2 h-0.5",
+                  i <= reachedIdx ? "bg-primary" : "bg-outline-variant"
+                )}
+              />
+            )}
+            {i < stages.length - 1 && (
+              <div
+                className={cn(
+                  "absolute top-2 left-1/2 right-0 h-0.5",
+                  i < reachedIdx ? "bg-primary" : "bg-outline-variant"
+                )}
+              />
+            )}
+            <div
+              className={cn(
+                "w-4 h-4 rounded-full border-2 relative z-10",
+                reached ? "bg-primary border-primary" : "bg-surface border-outline-variant"
+              )}
+            />
+            <span
+              className={cn(
+                "text-[10px] mt-1 font-semibold text-center",
+                reached ? "text-on-surface" : "text-outline"
+              )}
+            >
+              {stage.label}
+            </span>
+            {stage.at && (
+              <span className="text-[9px] text-outline">{timeEl(stage.at)}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function OrderDetailPage({
   params,
 }: {
@@ -202,6 +259,8 @@ export default function OrderDetailPage({
             {order.refundedByName ? ` · ${order.refundedByName}` : ""}
           </div>
         )}
+
+        {order.status !== "cancelled" && <Timeline order={order} />}
       </div>
 
       {actionError && (
@@ -220,6 +279,24 @@ export default function OrderDetailPage({
 
       {/* Items grouped by station → round */}
       <div className="flex-1 px-4 md:px-6 py-3 flex flex-col gap-4">
+        {/* Pending / ready / held summary */}
+        <div className="flex flex-wrap gap-1.5">
+          {openItems.some((i) => i.status === "queued") && (
+            <span className="bg-warning-container text-on-warning-container rounded-full px-3 py-1 text-xs font-bold">
+              Εκκρεμή: {openItems.filter((i) => i.status === "queued").length}
+            </span>
+          )}
+          {openItems.some((i) => i.status === "done") && (
+            <span className="bg-primary-container text-on-primary-container rounded-full px-3 py-1 text-xs font-bold">
+              Έτοιμα: {openItems.filter((i) => i.status === "done").length}
+            </span>
+          )}
+          {heldCount > 0 && (
+            <span className="bg-surface-container-low text-outline rounded-full px-3 py-1 text-xs font-bold">
+              Αναμονή: {heldCount}
+            </span>
+          )}
+        </div>
         {stationGroups.map((group) => (
           <div
             key={group.name}
@@ -288,6 +365,11 @@ export default function OrderDetailPage({
                               check_circle
                             </span>
                             {item.doneAt ? timeEl(item.doneAt) : ""}
+                            {item.bumpedByName && (
+                              <span className="hidden lg:inline text-[10px] text-outline font-semibold">
+                                · {item.bumpedByName}
+                              </span>
+                            )}
                           </span>
                         ) : item.status === "held" ? (
                           <span className="inline-flex items-center gap-1 text-outline font-bold text-xs">

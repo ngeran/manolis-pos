@@ -112,6 +112,8 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS daily_number integer`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS guests integer`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS sent_at timestamptz`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS preparing_at timestamptz`);
+  await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS ready_at timestamptz`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS priority boolean NOT NULL DEFAULT false`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS priority_at timestamptz`);
   await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS served_at timestamptz`);
@@ -192,6 +194,7 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sent_at timestamptz`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS fired_at timestamptz`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS done_at timestamptz`);
+  await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS bumped_by uuid REFERENCES users(id)`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_reason void_reason`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_note text`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_by uuid REFERENCES users(id)`);

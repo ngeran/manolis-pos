@@ -180,6 +180,9 @@ export const orders = pgTable(
     businessDate: date("business_date").notNull(),
     dailyNumber: integer("daily_number").notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    /** First time the order entered preparing / ready (engine stamps these). */
+    preparingAt: timestamp("preparing_at", { withTimezone: true }),
+    readyAt: timestamp("ready_at", { withTimezone: true }),
     priority: boolean("priority").notNull().default(false),
     priorityAt: timestamp("priority_at", { withTimezone: true }),
     servedAt: timestamp("served_at", { withTimezone: true }),
@@ -225,6 +228,8 @@ export const orderItems = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     firedAt: timestamp("fired_at", { withTimezone: true }),
     doneAt: timestamp("done_at", { withTimezone: true }),
+    /** Who bumped the item done (kitchen accountability). */
+    bumpedBy: uuid("bumped_by").references(() => users.id),
     voidedReason: voidReasonEnum("voided_reason"),
     voidedNote: text("voided_note"),
     voidedBy: uuid("voided_by").references(() => users.id),
