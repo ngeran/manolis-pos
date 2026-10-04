@@ -40,6 +40,7 @@ export const createReservationSchema = z.object({
   customerId: z.string().uuid().optional(),
   customerName: z.string().min(1).max(120).optional(),
   customerPhone: z.string().min(6).max(20).optional(),
+  customerEmail: z.string().email().optional(),
   partySize: z.number().int().min(1).max(30),
   reservationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   reservationTime: z.string().regex(/^([01]\d|2[0-3]):(00|30)(:00)?$/),

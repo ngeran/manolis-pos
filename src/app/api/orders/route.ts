@@ -24,6 +24,7 @@ import {
   recomputeOrderStatus,
   recomputeTotalCents,
 } from "@/lib/orders";
+import { markReservationSeated } from "@/lib/reservations";
 
 export const dynamic = "force-dynamic";
 
@@ -349,15 +350,8 @@ export async function POST(request: Request) {
       }
 
       if (reservation) {
-        const seated = await tx
-          .update(reservations)
-          .set({ status: "seated", orderId: order.id })
-          .where(and(eq(reservations.id, reservation.id), eq(reservations.status, "confirmed")))
-          .returning();
-        if (seated.length === 0) {
-          // Two staff seated the same reservation at once — roll everything back.
-          throw new OrderError(409, "Reservation is not active");
-        }
+        // Race-safe: fails the whole order transaction if someone seated it first.
+        await markReservationSeated(tx, reservation.id, order.id);
       }
 
       // CRM: the visit counts the moment the party is seated.

@@ -17,6 +17,7 @@ export interface Reservation {
   customerFirstName: string;
   customerLastName: string;
   customerPhone: string;
+  customerEmail: string | null;
   tableName: string | null;
 }
 
@@ -49,6 +50,7 @@ export interface CreateReservationInput {
   customerId?: string;
   customerName?: string;
   customerPhone?: string;
+  customerEmail?: string;
   partySize: number;
   reservationDate?: string;
   reservationTime: string;
