@@ -19,11 +19,17 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
   const setTableSelection = useOrderStore((s) => s.setTableSelection);
   const setGuests = useOrderStore((s) => s.setGuests);
   const setGuestName = useOrderStore((s) => s.setGuestName);
+  const setTakeawayChosen = useOrderStore((s) => s.setTakeawayChosen);
 
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [active, setActive] = useState<BoardOrder[]>([]);
   const [pending, setPending] = useState<SelectedTable[]>(
     () => useOrderStore.getState().tables
+  );
+  const [pendingTakeaway, setPendingTakeaway] = useState<boolean>(
+    () =>
+      useOrderStore.getState().tables.length === 0 &&
+      useOrderStore.getState().takeawayChosen
   );
   const [pendingGuests, setPendingGuests] = useState<number | null>(
     () => useOrderStore.getState().guests
@@ -52,6 +58,7 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
   }
 
   const toggleTable = (t: DiningTable) => {
+    setPendingTakeaway(false);
     setPending((prev) => {
       if (prev.some((p) => p.id === t.id)) {
         return prev.filter((p) => p.id !== t.id);
@@ -67,10 +74,25 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
     });
   };
 
+  const chooseTakeaway = () => {
+    setPending([]);
+    setPendingTakeaway(true);
+  };
+
+  const selectionMade = pending.length > 0 || pendingTakeaway;
+
   const apply = () => {
-    setTableSelection(pending);
-    setGuests(pending.length ? pendingGuests : null);
-    setGuestName(pendingName.trim() || null);
+    if (pendingTakeaway) {
+      setTableSelection([]);
+      setTakeawayChosen(true);
+      setGuests(pendingGuests);
+      setGuestName(pendingName.trim() || null);
+    } else if (pending.length > 0) {
+      setTableSelection(pending);
+      setTakeawayChosen(false);
+      setGuests(pendingGuests);
+      setGuestName(pendingName.trim() || null);
+    }
     onClose();
   };
 
@@ -101,10 +123,10 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
         <div className="p-4 flex flex-col gap-4">
           {/* Takeaway */}
           <button
-            onClick={() => setPending([])}
+            onClick={chooseTakeaway}
             className={cn(
               "w-full py-3 rounded-xl border-2 font-bold min-h-[52px] flex items-center justify-center gap-2 transition-colors",
-              pending.length === 0
+              pendingTakeaway
                 ? "border-primary bg-primary text-on-primary"
                 : "border-outline-variant bg-surface text-on-surface hover:border-primary-container"
             )}
@@ -218,7 +240,7 @@ export function TablePickerModal({ onClose }: TablePickerModalProps) {
           <Button variant="ghost" size="md" onClick={onClose}>
             Κλείσιμο
           </Button>
-          <Button variant="primary" size="md" onClick={apply}>
+          <Button variant="primary" size="md" onClick={apply} disabled={!selectionMade}>
             Έτοιμο
           </Button>
         </div>

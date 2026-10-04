@@ -34,6 +34,24 @@ export function TicketCard({
   const showAge = active.length > 0 && ticket.oldestActiveAt;
   const age = ageClass(ticket.oldestActiveAt, nowMs);
 
+  // Just-served: a brief farewell bar so the kitchen sees the order leave.
+  if (ticket.status === "served") {
+    return (
+      <div className="bg-surface border border-primary/40 rounded-xl p-2.5 opacity-80">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-outline">
+            #{ticket.dailyNumber}
+            {ticket.tableNumber ? ` · Τραπέζι ${ticket.tableNumber}` : ""}
+          </span>
+          <span className="text-xs font-bold text-primary flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">room_service</span>
+            ΣΕΡΒΙΡΙΣΤΗΚΕ
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   // Fully bumped for this station: collapse to a slim bar (undo window only).
   if (active.length === 0 && held.length === 0 && done.length > 0) {
     return (

@@ -7,6 +7,9 @@ import { DONE_UNDO_WINDOW_MS } from "@/lib/kitchen";
 
 export const dynamic = "force-dynamic";
 
+/** How long a just-served order stays visible so the kitchen sees it leave. */
+const SERVED_VISIBLE_MS = 5 * 60 * 1000;
+
 export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) return unauthorized();
@@ -24,18 +27,32 @@ export async function GET(request: Request) {
   }
 
   const doneCutoff = new Date(Date.now() - DONE_UNDO_WINDOW_MS);
+  const servedCutoff = new Date(Date.now() - SERVED_VISIBLE_MS);
 
-  // Step 1: which orders currently qualify (have ≥1 active or recently-done item,
-  // optionally scoped to one station)?
+  // Step 1: which orders currently qualify?
+  // - Active orders with work for the station (or a fresh undo strip).
+  // - Just-served orders stay visible briefly so the kitchen sees them leave.
   const qualifying = await db
     .selectDistinct({ orderId: orderItems.orderId })
     .from(orderItems)
     .innerJoin(orders, eq(orderItems.orderId, orders.id))
     .where(
       and(
-        inArray(orders.status, ["sent", "preparing", "ready"]),
-        ne(orderItems.status, "voided"),
-        or(inArray(orderItems.status, ["held", "queued"]), gte(orderItems.doneAt, doneCutoff)),
+        or(
+          and(
+            inArray(orders.status, ["sent", "preparing", "ready"]),
+            ne(orderItems.status, "voided"),
+            or(
+              inArray(orderItems.status, ["held", "queued"]),
+              gte(orderItems.doneAt, doneCutoff)
+            )
+          ),
+          and(
+            eq(orders.status, "served"),
+            gte(orders.servedAt, servedCutoff),
+            ne(orderItems.status, "voided")
+          )
+        ),
         stationId ? eq(orderItems.stationId, stationId) : undefined
       )
     );

@@ -27,6 +27,8 @@ interface OrderState {
   guestName: string | null;
   /** Reservation being seated (links the sent order back to it). */
   reservationId: string | null;
+  /** True once the staff explicitly picked Takeaway (no silent default). */
+  takeawayChosen: boolean;
   items: CartItem[];
   /** When set, submitting appends a new round to that live order. */
   editOrderId: string | null;
@@ -35,6 +37,7 @@ interface OrderState {
   setGuests: (guests: number | null) => void;
   setGuestName: (name: string | null) => void;
   setReservationId: (id: string | null) => void;
+  setTakeawayChosen: (chosen: boolean) => void;
   addItem: (item: Omit<CartItem, "quantityGrams"> & { quantityGrams: number }) => void;
   removeItem: (menuItemId: string) => void;
   updateQuantityGrams: (menuItemId: string, grams: number) => void;
@@ -58,6 +61,7 @@ export const useOrderStore = create<OrderState>()(
       guests: null,
       guestName: null,
       reservationId: null,
+      takeawayChosen: false,
       items: [],
       editOrderId: null,
       editOrderLabel: null,
@@ -69,6 +73,8 @@ export const useOrderStore = create<OrderState>()(
       setGuestName: (guestName) => set({ guestName }),
 
       setReservationId: (reservationId) => set({ reservationId }),
+
+      setTakeawayChosen: (takeawayChosen) => set({ takeawayChosen }),
 
       addItem: (item) =>
         set((state) => {
@@ -123,6 +129,7 @@ export const useOrderStore = create<OrderState>()(
           guests: null,
           guestName: null,
           reservationId: null,
+          takeawayChosen: false,
           editOrderId: null,
           editOrderLabel: null,
         }),
@@ -146,7 +153,7 @@ export const useOrderStore = create<OrderState>()(
     }),
     {
       name: "manolis-cart",
-      version: 5,
+      version: 6,
       migrate: (persisted) => {
         const state = persisted as Partial<OrderState> | undefined;
         return {
@@ -156,6 +163,7 @@ export const useOrderStore = create<OrderState>()(
           guests: state?.guests ?? null,
           guestName: state?.guestName ?? null,
           reservationId: state?.reservationId ?? null,
+          takeawayChosen: state?.takeawayChosen ?? false,
           editOrderId: null,
           editOrderLabel: null,
         } as OrderState;

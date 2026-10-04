@@ -36,6 +36,7 @@ export default function POSPage() {
   const tables = useOrderStore((s) => s.tables);
   const guests = useOrderStore((s) => s.guests);
   const guestName = useOrderStore((s) => s.guestName);
+  const takeawayChosen = useOrderStore((s) => s.takeawayChosen);
   const reservationId = useOrderStore((s) => s.reservationId);
   const clearCart = useOrderStore((s) => s.clearCart);
   const editOrderId = useOrderStore((s) => s.editOrderId);
@@ -91,6 +92,12 @@ export default function POSPage() {
 
   const handleSubmit = async () => {
     if (cartItems.length === 0) return;
+    // Order type is an explicit choice: never send with a silent Takeaway default.
+    if (!editOrderId && !takeawayChosen && tables.length === 0) {
+      setSubmitError("Επιλέξτε πρώτα προορισμό: τραπέζι ή Takeaway");
+      setPickerOpen(true);
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
 
@@ -167,14 +174,28 @@ export default function POSPage() {
             !editOrderId ? (
               <button
                 onClick={() => setPickerOpen(true)}
-                className="w-full sm:w-72 shrink-0 flex items-center justify-between bg-surface-container-low border border-outline-variant rounded-full px-4 py-2 min-h-[44px] hover:border-primary-container transition-colors"
+                className={cn(
+                  "w-full sm:w-72 shrink-0 flex items-center justify-between bg-surface-container-low border rounded-full px-4 py-2 min-h-[44px] hover:border-primary-container transition-colors",
+                  tables.length > 0 || takeawayChosen
+                    ? "border-outline-variant"
+                    : "border-dashed border-warning"
+                )}
               >
                 <span className="flex items-center gap-2 text-sm font-bold text-on-surface min-w-0">
-                  <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
-                    {tables.length ? "table_restaurant" : "takeout_dining"}
+                  <span
+                    className={cn(
+                      "material-symbols-outlined text-[18px] shrink-0",
+                      tables.length > 0 || takeawayChosen ? "text-primary" : "text-warning"
+                    )}
+                  >
+                    {tables.length ? "table_restaurant" : takeawayChosen ? "takeout_dining" : "help"}
                   </span>
                   <span className="truncate">
-                    {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
+                    {tables.length
+                      ? `Τραπέζι ${tableSelectionLabel(tables)}`
+                      : takeawayChosen
+                        ? "Takeaway"
+                        : "Επιλέξτε προορισμό"}
                     {guestName && <span> · {guestName}</span>}
                     {guestsLabel(guests) && (
                       <span className="text-outline font-semibold">
@@ -237,7 +258,7 @@ export default function POSPage() {
               </div>
               <div className="flex justify-between items-center px-4 py-3 border-b border-outline-variant">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold text-on-surface">Current Order</h2>
+                  <h2 className="text-xl font-bold text-on-surface">Παραγγελία</h2>
                   <span className="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-bold text-xs">
                     {cartItems.length}
                   </span>
@@ -357,23 +378,34 @@ export default function POSPage() {
                     onClick={() => setPickerOpen(true)}
                     className="w-full flex items-center justify-between min-h-[40px] mb-2"
                   >
-                    <span className="flex items-center gap-1.5 text-sm font-semibold text-outline min-w-0">
+                    <span
+                      className={cn(
+                        "flex items-center gap-1.5 text-sm font-semibold min-w-0",
+                        tables.length > 0 || takeawayChosen ? "text-on-surface" : "text-warning"
+                      )}
+                    >
                       <span className="material-symbols-outlined text-[18px] text-primary shrink-0">
-                        {tables.length ? "table_restaurant" : "takeout_dining"}
+                        {tables.length
+                          ? "table_restaurant"
+                          : takeawayChosen
+                            ? "takeout_dining"
+                            : "help"}
                       </span>
                       <span className="truncate">
-                        {tables.length ? `Τραπέζι ${tableSelectionLabel(tables)}` : "Takeaway"}
+                        {tables.length
+                          ? `Τραπέζι ${tableSelectionLabel(tables)}`
+                          : takeawayChosen
+                            ? "Takeaway"
+                            : "Επιλέξτε προορισμό"}
                         {guestName && <span> · {guestName}</span>}
-                        {guestsLabel(guests) && (
-                          <span> · {guestsLabel(guests)}</span>
-                        )}
+                        {guestsLabel(guests) && <span> · {guestsLabel(guests)}</span>}
                       </span>
                     </span>
                     <span className="text-xs font-bold text-primary shrink-0">Αλλαγή</span>
                   </button>
                 )}
                 <div className="flex justify-between text-2xl font-bold text-on-surface mb-4">
-                  <span>Total</span>
+                  <span>Σύνολο</span>
                   <span className="text-primary">{formatPrice(totalCents())}</span>
                 </div>
                 <div className="flex gap-3">
@@ -384,7 +416,7 @@ export default function POSPage() {
                     }}
                     className="px-4 py-3 rounded-lg font-semibold text-sm border border-outline-variant text-on-surface hover:bg-surface-container-high min-h-[48px]"
                   >
-                    Clear
+                    Άδειασμα
                   </button>
                   <button
                     onClick={handleSubmit}
@@ -392,7 +424,7 @@ export default function POSPage() {
                     className="flex-grow bg-primary text-on-primary py-3 rounded-lg font-bold text-base hover:bg-primary-container min-h-[48px] disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[24px]">restaurant_menu</span>
-                    {submitting ? "Sending..." : "Send to Kitchen"}
+                    {submitting ? "Αποστολή…" : "Αποστολή στην Κουζίνα"}
                   </button>
                 </div>
               </div>

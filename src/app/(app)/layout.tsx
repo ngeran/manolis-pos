@@ -10,14 +10,14 @@ import { cn } from "@/lib/utils";
 
 
 const navItems = [
-  { href: "/pos", label: "New Order", icon: "table_restaurant" },
-  { href: "/orders", label: "Orders", icon: "history" },
+  { href: "/pos", label: "Νέα Παραγγελία", icon: "table_restaurant" },
+  { href: "/orders", label: "Παραγγελίες", icon: "history" },
   { href: "/reservations", label: "Κρατήσεις", icon: "event_available" },
   { href: "/customers", label: "Πελάτες", icon: "group" },
-  { href: "/kitchen", label: "Kitchen", icon: "skillet" },
-  { href: "/admin/menu", label: "Menu Admin", icon: "restaurant" },
-  { href: "/admin/tables", label: "Tables", icon: "event_seat" },
-  { href: "/admin/categories", label: "Categories", icon: "category" },
+  { href: "/kitchen", label: "Κουζίνα", icon: "skillet" },
+  { href: "/admin/menu", label: "Μενού", icon: "restaurant" },
+  { href: "/admin/tables", label: "Τραπέζια", icon: "event_seat" },
+  { href: "/admin/categories", label: "Κατηγορίες", icon: "category" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
