@@ -4,7 +4,7 @@ import type { OrderStatus, VoidReason } from "@/lib/db/schema";
 export const AGE_AMBER_MS = 8 * 60 * 1000;
 export const AGE_RED_MS = 15 * 60 * 1000;
 /** How long a bumped item stays visible for undo (mirrors the server filter). */
-export const DONE_UNDO_WINDOW_MS = 10 * 60 * 1000;
+export const DONE_UNDO_WINDOW_MS = 60 * 1000;
 
 export type AgeClass = "ok" | "amber" | "red";
 

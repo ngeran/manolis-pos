@@ -3,11 +3,9 @@ import { db } from "@/lib/db";
 import { orderItems, orders, stations } from "@/lib/db/schema";
 import { and, eq, gte, inArray, ne, or } from "drizzle-orm";
 import { getSessionUser, unauthorized } from "@/lib/api-auth";
+import { DONE_UNDO_WINDOW_MS } from "@/lib/kitchen";
 
 export const dynamic = "force-dynamic";
-
-/** How long a bumped item stays visible for undo. */
-const DONE_UNDO_WINDOW_MS = 10 * 60 * 1000;
 
 export async function GET(request: Request) {
   const user = await getSessionUser();

@@ -34,6 +34,41 @@ export function TicketCard({
   const showAge = active.length > 0 && ticket.oldestActiveAt;
   const age = ageClass(ticket.oldestActiveAt, nowMs);
 
+  // Fully bumped for this station: collapse to a slim bar (undo window only).
+  if (active.length === 0 && held.length === 0 && done.length > 0) {
+    return (
+      <div className="bg-surface border border-outline-variant/60 rounded-xl p-2.5 opacity-70">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-outline">
+            #{ticket.dailyNumber}
+            {ticket.tableNumber ? ` · Τραπέζι ${ticket.tableNumber}` : ""}
+          </span>
+          <span className="text-xs font-semibold text-success flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+            Ετοιμο · {done.length} είδη
+          </span>
+        </div>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {done.map((item) => (
+            <span
+              key={item.id}
+              className="inline-flex items-center gap-0.5 text-[11px] bg-surface-container-low rounded-full pl-2 pr-0.5 py-0.5 text-outline line-through"
+            >
+              {item.nameEl}
+              <button
+                onClick={() => onUnbump(item)}
+                className="text-primary hover:text-on-surface flex items-center"
+                title="Αναίρεση"
+              >
+                <span className="material-symbols-outlined text-[12px] no-underline">undo</span>
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
