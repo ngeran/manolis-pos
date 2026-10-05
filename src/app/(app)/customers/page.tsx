@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCustomers, useCreateCustomer, useUpdateCustomer, type Customer } from "@/hooks/useCustomers";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +22,9 @@ export default function CustomersPage() {
   const { data: customers, isLoading } = useCustomers(debouncedSearch);
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
+  const qc = useQueryClient();
 
+  const [role, setRole] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [form, setForm] = useState({
@@ -33,6 +36,37 @@ export default function CustomersPage() {
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((s) => setRole(s?.user?.role ?? null))
+      .catch(() => {});
+  }, []);
+
+  const handleDelete = async (c: Customer) => {
+    if (
+      !confirm(
+        `Διαγραφή πελάτη "${c.firstName} ${c.lastName}";\nΘα διαγραφούν και οι κρατήσεις του. Η ενέργεια δεν αναιρείται.`
+      )
+    )
+      return;
+    setError("");
+    try {
+      const res = await fetch(`/api/customers/${c.id}`, { method: "DELETE" });
+      if (res.status === 403) {
+        setError("Admin access required");
+        return;
+      }
+      if (!res.ok) {
+        setError("Failed to delete customer");
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["customers"] });
+    } catch {
+      setError("Αποτυχία διαγραφής");
+    }
+  };
 
   const openCreate = () => {
     setForm({ firstName: "", lastName: "", phone: "", email: "", dietaryNotes: "" });
@@ -196,6 +230,16 @@ export default function CustomersPage() {
               <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
                 <span className="material-symbols-outlined text-[18px]">edit</span>
               </Button>
+              {role === "admin" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(c)}
+                  title="Διαγραφή πελάτη"
+                >
+                  <span className="material-symbols-outlined text-[18px] text-error">delete</span>
+                </Button>
+              )}
             </div>
           ))}
         </div>
