@@ -457,6 +457,10 @@ export default function POSPage() {
         />
       )}
 
+      {pickerOpen && (
+        <TablePickerModal onClose={() => setPickerOpen(false)} />
+      )}
+
       {modifierItem && (
         <ModifierModal
           item={modifierItem}
