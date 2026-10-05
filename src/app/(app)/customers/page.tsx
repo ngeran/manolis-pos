@@ -6,6 +6,7 @@ import { useCustomers, useCreateCustomer, useUpdateCustomer, type Customer } fro
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, cn } from "@/lib/utils";
+import { AdminOnly } from "@/components/AdminOnly";
 
 function lastVisitLabel(iso: string | null): string {
   if (!iso) return "—";
@@ -16,7 +17,7 @@ function lastVisitLabel(iso: string | null): string {
   });
 }
 
-export default function CustomersPage() {
+function CustomersPageContent() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search);
   const { data: customers, isLoading } = useCustomers(debouncedSearch);
@@ -245,5 +246,13 @@ export default function CustomersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CustomersPagePage() {
+  return (
+    <AdminOnly>
+      <CustomersPageContent />
+    </AdminOnly>
   );
 }

@@ -12,18 +12,28 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/pos", label: "Νέα Παραγγελία", icon: "table_restaurant" },
   { href: "/orders", label: "Παραγγελίες", icon: "history" },
-  { href: "/reservations", label: "Κρατήσεις", icon: "event_available" },
-  { href: "/customers", label: "Πελάτες", icon: "group" },
   { href: "/kitchen", label: "Κουζίνα", icon: "skillet" },
-  { href: "/admin/menu", label: "Μενού", icon: "restaurant" },
-  { href: "/admin/tables", label: "Τραπέζια", icon: "event_seat" },
-  { href: "/admin/categories", label: "Κατηγορίες", icon: "category" },
+  { href: "/reservations", label: "Κρατήσεις", icon: "event_available", adminOnly: true },
+  { href: "/customers", label: "Πελάτες", icon: "group", adminOnly: true },
+  { href: "/admin/menu", label: "Μενού", icon: "restaurant", adminOnly: true },
+  { href: "/admin/tables", label: "Τραπέζια", icon: "event_seat", adminOnly: true },
+  { href: "/admin/categories", label: "Κατηγορίες", icon: "category", adminOnly: true },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((s) => setRole(s?.user?.role ?? null))
+      .catch(() => {});
+  }, []);
+
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || role === "admin");
 
   // The cart persists to localStorage; rehydrate after mount so the SSR
   // markup (which always renders an empty cart) matches the first client render.
@@ -106,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         >
           <div className="flex flex-col gap-1 flex-grow mt-[calc(4rem+env(safe-area-inset-top))]">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

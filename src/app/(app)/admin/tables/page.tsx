@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { DiningTable } from "@/lib/kitchen";
+import { AdminOnly } from "@/components/AdminOnly";
 
-export default function AdminTablesPage() {
+function AdminTablesPageContent() {
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [newName, setNewName] = useState("");
   const [newNickname, setNewNickname] = useState("");
@@ -239,5 +240,13 @@ export default function AdminTablesPage() {
         εμφανίζονται στην άποψη Τραπέζια ως ξεχωριστά πλακίδια.
       </p>
     </div>
+  );
+}
+
+export default function AdminTablesPagePage() {
+  return (
+    <AdminOnly>
+      <AdminTablesPageContent />
+    </AdminOnly>
   );
 }

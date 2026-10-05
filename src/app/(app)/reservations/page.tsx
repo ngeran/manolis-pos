@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { displayTime } from "@/lib/booking";
 import type { Reservation } from "@/hooks/useReservations";
 import type { DiningTable } from "@/lib/kitchen";
+import { AdminOnly } from "@/components/AdminOnly";
 
 const POLL_MS = 15000;
 
@@ -83,7 +84,7 @@ function exportCSV(rows: Reservation[]) {
   URL.revokeObjectURL(url);
 }
 
-export default function ReservationsPage() {
+function ReservationsPageContent() {
   const router = useRouter();
   const [date, setDate] = useState(athensToday);
   const [showForm, setShowForm] = useState(false);
@@ -656,5 +657,13 @@ function ReservationFormModal({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReservationsPagePage() {
+  return (
+    <AdminOnly>
+      <ReservationsPageContent />
+    </AdminOnly>
   );
 }

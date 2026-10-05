@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { AdminOnly } from "@/components/AdminOnly";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +66,7 @@ const emptyForm: ItemForm = {
   modifierOptionsText: "",
 };
 
-export default function AdminMenuPage() {
+function AdminMenuPageContent() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
@@ -782,5 +783,13 @@ export default function AdminMenuPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+export default function AdminMenuPagePage() {
+  return (
+    <AdminOnly>
+      <AdminMenuPageContent />
+    </AdminOnly>
   );
 }

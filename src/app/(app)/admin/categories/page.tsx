@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { AdminOnly } from "@/components/AdminOnly";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ interface Category {
   sortOrder: number;
 }
 
-export default function AdminCategoriesPage() {
+function AdminCategoriesPageContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newNameEl, setNewNameEl] = useState("");
   const [newNameEn, setNewNameEn] = useState("");
@@ -217,5 +218,13 @@ export default function AdminCategoriesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminCategoriesPagePage() {
+  return (
+    <AdminOnly>
+      <AdminCategoriesPageContent />
+    </AdminOnly>
   );
 }

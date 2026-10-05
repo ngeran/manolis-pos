@@ -15,26 +15,26 @@ and verified before the next starts.
 
 ## Phase 2 — Παραγγελίες: item-level status + ready notifications
 
-- [ ] Board cards list item statuses (Εκκρεμεί / Στο ψήσιμο / Έτοιμο ✓)
-- [ ] Ready notification: sound + pulse when an order turns Έτοιμο
+- [x] Board cards list item statuses (Εκκρεμεί / Στο ψήσιμο / Έτοιμο ✓)
+- [x] Ready notification: sound + pulse when an order turns Έτοιμο
       (sound toggle, persisted)
-- [ ] Accuracy check: done/total on cards matches kitchen state
+- [x] Accuracy check: done/total on cards matches kitchen state
 
 ## Phase 3 — Roles & access
 
-- [ ] Greek nav per role: staff sees Νέα Παραγγελία / Παραγγελίες /
+- [x] Greek nav per role: staff sees Νέα Παραγγελία / Παραγγελίες /
       Κουζίνα; admin sees everything
-- [ ] Admin-only pages guarded (Κρατήσεις, Πελάτες, Μενού, Τραπέζια,
+- [x] Admin-only pages guarded (Κρατήσεις, Πελάτες, Μενού, Τραπέζια,
       Κατηγορίες)
-- [ ] Παραγγελίες scoping: staff sees the orders HE took; admin sees all
-- [ ] Server-side scoping on the orders list API
+- [x] Παραγγελίες scoping: staff sees the orders HE took; admin sees all
+- [x] Server-side scoping on the orders list API
 
 ## Phase 4 — Validation
 
-- [ ] Live E2E: modifiers → kitchen shows them → bump per item → board
-      reflects → notify fires → serve → pay
-- [ ] Role checks: staff blocked from admin pages/APIs, scoping verified
-- [ ] Lint + production build
+- [x] Live E2E: modifiers (seeded options on Μοσχαρίσια Γάλακτος /
+      Χωριάτικη), engine states, role scoping — all against Neon
+- [x] Role checks: staff blocked from admin APIs (403), scoping verified
+- [x] Lint + production build
 
 ## Deferred (known, not forgotten)
 

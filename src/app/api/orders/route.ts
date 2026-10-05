@@ -40,15 +40,22 @@ export async function GET(request: Request) {
   const from = params.get("from");
   const to = params.get("to");
 
+  // Waiters (staff) see the orders they took; admins see everything.
+  const staffOwnScope = user.role !== "admin" ? eq(orders.userId, user.id) : undefined;
+
   let where;
   if (scope === "active") {
     const cutoff = new Date(Date.now() - SERVED_BOARD_WINDOW_MS);
-    where = or(
-      inArray(orders.status, ["sent", "preparing", "ready"]),
-      and(eq(orders.status, "served"), gte(orders.servedAt, cutoff))
+    where = and(
+      staffOwnScope,
+      or(
+        inArray(orders.status, ["sent", "preparing", "ready"]),
+        and(eq(orders.status, "served"), gte(orders.servedAt, cutoff))
+      )
     );
   } else if (scope === "closed") {
     where = and(
+      staffOwnScope,
       inArray(orders.status, ["paid", "cancelled"]),
       from ? gte(orders.businessDate, from) : undefined,
       to ? lte(orders.businessDate, to) : undefined
