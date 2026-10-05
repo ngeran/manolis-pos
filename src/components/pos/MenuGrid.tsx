@@ -16,6 +16,7 @@ export interface MenuItemData {
   categoryId: string;
   categoryNameEl: string | null;
   categoryNameEn: string | null;
+  modifierOptions?: string[];
 }
 
 type MenuView = "pictures" | "list";

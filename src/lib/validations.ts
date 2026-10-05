@@ -122,6 +122,7 @@ export const createMenuItemSchema = z.object({
   pricingType: z.enum(["unit", "weight"]).default("unit"),
   available: z.boolean().default(true),
   imageUrl: z.string().optional(),
+  modifierOptions: z.array(z.string().min(1).max(80)).max(20).optional(),
 });
 
 export const updateMenuItemSchema = z.object({
@@ -135,6 +136,7 @@ export const updateMenuItemSchema = z.object({
   pricingType: z.enum(["unit", "weight"]).optional(),
   available: z.boolean().optional(),
   imageUrl: z.string().optional().nullable(),
+  modifierOptions: z.array(z.string().min(1).max(80)).max(20).optional().nullable(),
 });
 
 export const createCategorySchema = z.object({

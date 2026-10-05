@@ -7,6 +7,7 @@ import { WeightPickerModal } from "@/components/pos/WeightPickerModal";
 import { QuantityStepper } from "@/components/pos/QuantityStepper";
 import { NoteModal } from "@/components/pos/NoteModal";
 import { TablePickerModal } from "@/components/pos/TablePickerModal";
+import { ModifierModal } from "@/components/pos/ModifierModal";
 import { useOrderStore, type CartItem } from "@/lib/store";
 import { formatPrice, formatWeight, cn } from "@/lib/utils";
 import { guestsLabel, tableSelectionLabel } from "@/lib/kitchen";
@@ -26,6 +27,7 @@ export default function POSPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [weightPickerItem, setWeightPickerItem] = useState<MenuItemData | null>(null);
+  const [modifierItem, setModifierItem] = useState<MenuItemData | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<CartItem | null>(null);
@@ -65,6 +67,8 @@ export default function POSPage() {
   const handleAddItem = (item: MenuItemData) => {
     if (item.pricingType === "weight") {
       setWeightPickerItem(item);
+    } else if ((item.modifierOptions?.length ?? 0) > 0) {
+      setModifierItem(item);
     } else {
       addItem({
         menuItemId: item.id,
@@ -453,7 +457,24 @@ export default function POSPage() {
         />
       )}
 
-      {pickerOpen && <TablePickerModal onClose={() => setPickerOpen(false)} />}
+      {modifierItem && (
+        <ModifierModal
+          item={modifierItem}
+          onConfirm={(notes) => {
+            addItem({
+              menuItemId: modifierItem.id,
+              name: modifierItem.nameEl,
+              priceCents: modifierItem.priceCents,
+              pricingType: "unit",
+              quantityGrams: 1000,
+              notes,
+            });
+            tickHaptic();
+            setModifierItem(null);
+          }}
+          onCancel={() => setModifierItem(null)}
+        />
+      )}
 
       {submitError && (
         <div

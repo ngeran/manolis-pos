@@ -198,6 +198,10 @@ async function migrate() {
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS started_at timestamptz`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS started_by uuid REFERENCES users(id)`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS bumped_by uuid REFERENCES users(id)`);
+  await db.execute(sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS modifier_options jsonb NOT NULL DEFAULT '[]'`);
+  // Examples (admin-editable per item).
+  await db.execute(sql`UPDATE menu_items SET modifier_options = '["Raw","Medium rare","Medium","Medium well","Well done"]'::jsonb WHERE name_en = 'Beef Steak' AND modifier_options = '[]'::jsonb`);
+  await db.execute(sql`UPDATE menu_items SET modifier_options = '["Χωρίς κρεμμύδι","Χωρίς φέτα","Χωρίς ελιές"]'::jsonb WHERE name_en = 'Greek Traditional Salad' AND modifier_options = '[]'::jsonb`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_reason void_reason`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_note text`);
   await db.execute(sql`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS voided_by uuid REFERENCES users(id)`);

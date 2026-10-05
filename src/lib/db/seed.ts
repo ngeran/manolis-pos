@@ -89,7 +89,7 @@ async function seed() {
     { nameEl: "Ντοματοσαλάτα", nameEn: "Tomato Salad", categoryId: catMap["Σαλάτες"]!, priceCents: 400, available: true, station: "salads" },
     { nameEl: "Κολοκυθάκια Βραστά", nameEn: "Boiled Zucchini", categoryId: catMap["Σαλάτες"]!, priceCents: 500, available: true, station: "salads" },
     { nameEl: "Μπρόκολο", nameEn: "Broccoli", categoryId: catMap["Σαλάτες"]!, priceCents: 500, available: true, station: "salads" },
-    { nameEl: "Χωριάτικη Σαλάτα", nameEn: "Greek Traditional Salad", categoryId: catMap["Σαλάτες"]!, priceCents: 800, available: true, station: "salads" },
+    { nameEl: "Χωριάτικη Σαλάτα", nameEn: "Greek Traditional Salad", categoryId: catMap["Σαλάτες"]!, priceCents: 800, available: true, station: "salads", modifierOptions: ["Χωρίς κρεμμύδι", "Χωρίς φέτα", "Χωρίς ελιές"] },
     { nameEl: "Ρόκα Σαλάτα", nameEn: "Rocket Salad", categoryId: catMap["Σαλάτες"]!, priceCents: 800, available: true, station: "salads" },
     { nameEl: "Λάχανο - Καρότο", nameEn: "Cabbage - Carrot Salad", categoryId: catMap["Σαλάτες"]!, priceCents: 500, available: true, station: "salads" },
     { nameEl: "Πολίτικη Σαλάτα", nameEn: "Mix Pickled Salad", categoryId: catMap["Σαλάτες"]!, priceCents: 600, available: true, station: "salads" },
@@ -97,7 +97,7 @@ async function seed() {
 
     // Κρεατικά
     { nameEl: "Χοιρινή Μπριζόλα", nameEn: "Pork Steak", categoryId: catMap["Κρεατικά"]!, priceCents: 1200, available: true, station: "grill" },
-    { nameEl: "Μοσχαρίσια Γάλακτος", nameEn: "Beef Steak", categoryId: catMap["Κρεατικά"]!, priceCents: 1500, available: true, station: "grill" },
+    { nameEl: "Μοσχαρίσια Γάλακτος", nameEn: "Beef Steak", categoryId: catMap["Κρεατικά"]!, priceCents: 1500, available: true, station: "grill", modifierOptions: ["Raw", "Medium rare", "Medium", "Medium well", "Well done"] },
     { nameEl: "Καπνιστή Χοιρινή Μπριζόλα", nameEn: "Smoked Pork Steak", categoryId: catMap["Κρεατικά"]!, priceCents: 1300, available: true, station: "grill" },
     { nameEl: "Μπιφτέκια", nameEn: "Homemade Burger", categoryId: catMap["Κρεατικά"]!, priceCents: 1000, available: true, station: "grill" },
     { nameEl: "Ψαρονέφρι", nameEn: "Pork Tender Loin", categoryId: catMap["Κρεατικά"]!, priceCents: 1200, available: true, station: "grill" },

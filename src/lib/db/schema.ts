@@ -9,6 +9,7 @@ import {
   date,
   time,
   timestamp,
+  jsonb,
   index,
   uniqueIndex,
   primaryKey,
@@ -155,6 +156,8 @@ export const menuItems = pgTable(
     pricingType: text("pricing_type").notNull().default("unit"),
     available: boolean("available").notNull().default(true),
     imageUrl: text("image_url"),
+    /** Predefined options shown when ordering (e.g. doneness, without onion). */
+    modifierOptions: jsonb("modifier_options").notNull().default([]),
     stationId: uuid("station_id")
       .notNull()
       .references(() => stations.id),

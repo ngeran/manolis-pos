@@ -21,6 +21,7 @@ interface MenuItem {
   categoryId: string;
   stationId: string;
   stationNameEl: string | null;
+  modifierOptions: string[];
 }
 
 interface Category {
@@ -47,6 +48,7 @@ interface ItemForm {
   pricingType: "unit" | "weight";
   available: boolean;
   imageUrl: string;
+  modifierOptionsText: string;
 }
 
 const emptyForm: ItemForm = {
@@ -60,6 +62,7 @@ const emptyForm: ItemForm = {
   pricingType: "unit",
   available: true,
   imageUrl: "",
+  modifierOptionsText: "",
 };
 
 export default function AdminMenuPage() {
@@ -68,6 +71,7 @@ export default function AdminMenuPage() {
   const [stations, setStations] = useState<Station[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<MenuItem>>({});
+  const [editOptionsText, setEditOptionsText] = useState<string | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState<ItemForm>(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -110,10 +114,17 @@ export default function AdminMenuPage() {
   };
 
   const handleSave = async (id: string) => {
+    const payload: Record<string, unknown> = { ...editData };
+    if (editOptionsText !== undefined) {
+      payload.modifierOptions = editOptionsText
+        .split("\n")
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
     await fetch("/api/menu", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...editData }),
+      body: JSON.stringify({ id, ...payload }),
     });
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, ...editData } : i))
@@ -194,6 +205,10 @@ export default function AdminMenuPage() {
           pricingType: form.pricingType,
           available: form.available,
           imageUrl: form.imageUrl || undefined,
+          modifierOptions: form.modifierOptionsText
+            .split("\n")
+            .map((x) => x.trim())
+            .filter(Boolean),
         }),
       });
       if (!res.ok) throw new Error("Failed to create item");
@@ -400,6 +415,22 @@ export default function AdminMenuPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Modifier options */}
+              <div>
+                <label className="block text-sm font-semibold text-on-surface mb-1">
+                  Επιλογές προϊόντος (μία ανά σειρά)
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full border border-outline-variant rounded-lg px-3 py-2 text-base bg-surface resize-none"
+                  placeholder={"Medium\nWell done\nΧωρίς κρεμμύδι"}
+                  value={form.modifierOptionsText}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, modifierOptionsText: e.target.value }))
+                  }
+                />
               </div>
 
               {/* Price */}
@@ -622,6 +653,13 @@ export default function AdminMenuPage() {
                           </option>
                         ))}
                       </select>
+                      <textarea
+                        rows={2}
+                        className="border border-outline-variant rounded-lg px-3 py-1 text-sm bg-surface resize-none"
+                        placeholder="Επιλογές (μία ανά σειρά)"
+                        value={editOptionsText}
+                        onChange={(e) => setEditOptionsText(e.target.value)}
+                      />
                     </div>
                   ) : (
                     <div>
@@ -720,6 +758,7 @@ export default function AdminMenuPage() {
                           onClick={() => {
                             setEditing(item.id);
                             setEditData({});
+                            setEditOptionsText((item.modifierOptions ?? []).join("\n"));
                           }}
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>

@@ -31,6 +31,7 @@ export async function GET() {
       stationSlug: stations.slug,
       stationNameEl: stations.nameEl,
       stationNameEn: stations.nameEn,
+      modifierOptions: menuItems.modifierOptions,
     })
     .from(menuItems)
     .leftJoin(categories, eq(menuItems.categoryId, categories.id))
