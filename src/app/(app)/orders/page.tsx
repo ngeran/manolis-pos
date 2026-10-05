@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePolling } from "@/hooks/usePolling";
 import { useServerClock } from "@/hooks/useServerClock";
 import { StatusChip } from "@/components/service/StatusChip";
 import { TableView } from "@/components/service/TableView";
+import { playChime } from "@/lib/sound";
 import { Button } from "@/components/ui/Button";
 import { calculateLineTotal, formatPrice, formatWeight, cn } from "@/lib/utils";
 import {
@@ -50,6 +51,9 @@ export default function OrdersPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [paying, setPaying] = useState<BoardOrder | null>(null);
+  const [soundOn, setSoundOn] = useState(true);
+  const [readyToast, setReadyToast] = useState<string | null>(null);
+  const prevReadyRef = useRef<Set<string> | null>(null);
   // A specific picked day overrides the range chips.
   const window =
     tab === "closed" && day
@@ -105,6 +109,38 @@ export default function OrdersPage() {
     }
     return list;
   }, [data?.orders, tab, query, statusFilter]);
+
+  // Notification: chime + toast when an order turns Έτοιμο (new vs last poll).
+  const readyIds = useMemo(
+    () => new Set(orders.filter((o) => o.status === "ready").map((o) => o.id)),
+    [orders]
+  );
+  const seenReadyRef = useRef<Set<string> | null>(null);
+  const seenReady = seenReadyRef.current;
+  useEffect(() => {
+    if (tab !== "active") return;
+    const fresh = [...readyIds].filter((id) => !seenReady?.has(id));
+    if (seenReady === null) {
+      seenReadyRef.current = readyIds;
+      return;
+    }
+    seenReadyRef.current = readyIds;
+    if (fresh.length === 0) return;
+    if (soundOn) playChime();
+    const names = fresh
+      .map((id) => orders.find((o) => o.id === id))
+      .filter((o): o is BoardOrder => !!o)
+      .map((o) => `#${o.dailyNumber}`);
+    setReadyToast(`Έτοιμη: ${names.join(", ")}`);
+  }, [readyIds, orders, tab, soundOn]);
+
+  // Auto-clear the ready toast
+  const readyToastTimer = readyToast;
+  useEffect(() => {
+    if (!readyToastTimer) return;
+    const t = setTimeout(() => setReadyToast(null), 6000);
+    return () => clearTimeout(t);
+  }, [readyToastTimer]);
 
   const handleServe = async (id: string) => {
     await fetch(`/api/orders/${id}`, {
@@ -292,6 +328,16 @@ export default function OrdersPage() {
           />
         </div>
       </div>
+
+      {readyToast && (
+        <div
+          className="bg-primary text-on-primary rounded-xl px-4 py-2.5 text-sm font-bold mb-3 flex items-center gap-2 shadow-lg"
+          role="status"
+        >
+          <span className="material-symbols-outlined text-[18px]">notifications_active</span>
+          {readyToast}
+        </div>
+      )}
 
       {tableView ? (
         <TableView orders={orders} nowMs={nowMs} />
@@ -538,6 +584,36 @@ function OrderCard({
         {hiddenItems > 0 && (
           <div className="text-xs font-semibold text-primary mt-1">
             +{hiddenItems} ακόμη
+          </div>
+        )}
+      </div>
+
+      {/* Item statuses (live from kitchen) */}
+      <div className="border-t border-outline-variant pt-2">
+        {shownItems.map((it, idx) => (
+          <div key={`${it.round}-${idx}`} className="flex items-center gap-1.5 text-xs py-0.5">
+            {it.status === "done" ? (
+              <span className="material-symbols-outlined text-[14px] text-success shrink-0">check_circle</span>
+            ) : it.status === "in_progress" ? (
+              <span className="material-symbols-outlined text-[14px] text-secondary shrink-0">local_fire_department</span>
+            ) : it.status === "held" ? (
+              <span className="material-symbols-outlined text-[14px] text-outline shrink-0">schedule</span>
+            ) : (
+              <span className="material-symbols-outlined text-[14px] text-outline shrink-0">radio_button_unchecked</span>
+            )}
+            <span className={cn("truncate text-on-surface", it.status === "voided" && "line-through opacity-50")}>
+              {it.nameEl}
+              {it.status === "in_progress" && <span className="text-secondary font-semibold"> · Στο ψήσιμο</span>}
+              {it.status === "held" && <span className="text-outline"> · Αναμονή</span>}
+            </span>
+            {it.round > 1 && (
+              <span className="text-[9px] font-bold text-outline shrink-0">R{it.round}</span>
+            )}
+          </div>
+        ))}
+        {order.items.length > shownItems.length && (
+          <div className="text-[10px] font-semibold text-primary mt-0.5">
+            +{order.items.length - shownItems.length} ακόμη
           </div>
         )}
       </div>

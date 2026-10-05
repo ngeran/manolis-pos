@@ -5,11 +5,11 @@ and verified before the next starts.
 
 ## Phase 1 — Item comments & predefined options
 
-- [ ] Schema: `menu_items.modifier_options` (jsonb array of strings)
-- [ ] Migration applied to Neon (+ examples: Μοσχαρίσια Γάλακτος doneness,
+- [x] Schema: `menu_items.modifier_options` (jsonb array of strings)
+- [x] Migration applied to Neon (+ examples: Μοσχαρίσια Γάλακτος doneness,
       Χωριάτικη Σαλάτα without-onion options)
-- [ ] Admin Μενού: modifier options editor (create + inline edit)
-- [ ] POS: item with options opens a selection modal (predefined option +
+- [x] Admin Μενού: modifier options editor (create + inline edit)
+- [x] POS: item with options opens a selection modal (predefined option +
       free comment) before entering the cart; options combine into the
       item's notes so kitchen/board/detail all show them
 
