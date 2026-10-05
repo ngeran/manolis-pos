@@ -16,12 +16,22 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
+  for (const key of ["email", "dietaryNotes"]) {
+    if (body[key] === "") delete body[key];
+  }
   const parsed = updateCustomerSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const first = parsed.error.issues[0];
+    return NextResponse.json(
+      { error: first ? `${first.path.join(".") || "δεδομένα"}: ${first.message}` : "Invalid data" },
+      { status: 400 }
+    );
   }
 
-  const { id: _ignored, ...updates } = parsed.data;
+  const updates = { ...parsed.data };
+  // Explicit nulls clear a field; "" was dropped before parsing.
+  if (body.email === "") updates.email = null;
+  if (body.dietaryNotes === "") updates.dietaryNotes = null;
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }

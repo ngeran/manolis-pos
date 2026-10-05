@@ -61,16 +61,18 @@ export default function CustomersPage() {
     }
     setSaving(true);
     setError("");
+    const payload: Record<string, unknown> = {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      phone: form.phone.trim(),
+      // Empty strings are sanitized by the API ("" clears the field on edit).
+      email: form.email.trim(),
+      dietaryNotes: form.dietaryNotes.trim(),
+    };
+    if (editing) payload.id = editing.id;
     try {
-      const payload = {
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim() || null,
-        dietaryNotes: form.dietaryNotes.trim() || null,
-      };
       if (editing) {
-        await updateCustomer.mutateAsync({ id: editing.id, ...payload });
+        await updateCustomer.mutateAsync(payload as { id: string } & Record<string, unknown>);
       } else {
         await createCustomer.mutateAsync(payload);
       }

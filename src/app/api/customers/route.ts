@@ -42,9 +42,17 @@ export async function POST(request: Request) {
   if (!user) return unauthorized();
 
   const body = await request.json();
+  // Empty optional fields arrive as "" from forms — drop them before parsing.
+  for (const key of ["email", "dietaryNotes"]) {
+    if (body[key] === "") delete body[key];
+  }
   const parsed = createCustomerSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const first = parsed.error.issues[0];
+    return NextResponse.json(
+      { error: first ? `${first.path.join(".") || "δεδομένα"}: ${first.message}` : "Invalid data" },
+      { status: 400 }
+    );
   }
 
   const existing = await db
